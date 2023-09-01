@@ -10,11 +10,11 @@ def test_run_without_exception():
         bing = browser.open("https://bing.com")
         duck_duck = browser.open("https://duckduckgo.com/")  # noqa
 
-        assert len(browser.get_all_tabs()) == 4
+        assert len(browser.all_tabs()) == 4
 
         browser.close_tab(bing)
 
-        assert len(browser.get_all_tabs()) == 3
+        assert len(browser.all_tabs()) == 3
 
         yahoo.switch()
 

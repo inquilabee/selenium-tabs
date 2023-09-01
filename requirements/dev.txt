@@ -1,0 +1,10 @@
+-r base.txt
+
+# Development related
+pre-commit
+black
+ruff
+sourcery
+mypy
+bandit
+tox

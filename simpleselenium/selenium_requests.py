@@ -1,15 +1,22 @@
-from __future__ import annotations
-
-import os
+import contextlib
 import time
 from collections import OrderedDict
 
+import pyautogui
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.remote import webelement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+
+from simpleselenium import scripts
+
+
+class SeleniumRequestException(Exception):
+    pass
 
 
 class Session:
@@ -20,7 +27,7 @@ class Session:
         "FireFox": webdriver.Firefox,
     }
 
-    BROWSER_OPTION_FUNCTION = {"Chrome": ChromeOptions, "Firefox": FirefoxOptions}
+    BROWSER_OPTION_FUNCTION = {"Chrome": ChromeOptions, "FireFox": FirefoxOptions}
 
     def __init__(self, browser_name, driver_path, implicit_wait, user_agent, headless=False):
         self.browser = browser_name
@@ -33,8 +40,7 @@ class Session:
         self.driver = self._get_driver()
 
     def _get_driver(self) -> webdriver:
-        """returns the driver/browser instance based on set environment variables
-        and arguments"""
+        """returns the driver/browser instance based on set variables and arguments"""
 
         driver_options = self.BROWSER_OPTION_FUNCTION[self.browser]()
 
@@ -46,24 +52,12 @@ class Session:
             driver_options.add_argument("no-default-browser-check")
 
         driver = self.BROWSER_DRIVER_FUNCTION[self.browser](
-            self.driver_path, options=driver_options
+            options=driver_options,
         )
         driver.implicitly_wait(self.implicit_wait)
         # driver.set_page_load_timeout(self.implicit_wait)
 
         return driver
-
-    def _get_attr_or_env(self, env_var, raise_exception=True):
-        if hasattr(self, env_var):
-            return getattr(self, env_var)
-
-        driver_path = os.getenv(env_var, None)
-
-        if driver_path:
-            return os.getenv(env_var, None)
-
-        if raise_exception:
-            raise Exception(f"Please define {env_var} as class attribute or environment variable.")
 
     def close(self):
         """Close Session"""
@@ -83,13 +77,10 @@ class Tab:
 
     def __str__(self):
         return (
-            "Tab("
-            f"start_url={self.start_url}, "
-            f"active={self.is_active}, "
-            f"alive={self.is_alive}, "
-            f"tab_handle={self.tab_handle}"
-            ")"
+            f"Tab(start_url={self.start_url}, active={self.is_active}, alive={self.is_alive}, handle={self.tab_handle})"
         )
+
+    __repr__ = __str__
 
     @property
     def is_alive(self):
@@ -101,7 +92,7 @@ class Tab:
         """Whether the tab is active tab on the browser"""
         try:
             return self._session.driver.current_window_handle == self.tab_handle
-        except:  # noqa
+        except Exception:  # noqa
             return False
 
     @property
@@ -115,26 +106,35 @@ class Tab:
         return self.driver.current_url
 
     @property
+    def page_source(self) -> str:
+        return self.driver.page_source
+
+    @property
     def driver(self) -> webdriver:
         """Switch to tab (if possible) and return driver"""
 
         if not self.is_alive:
-            raise Exception("Current window is dead.")
+            raise SeleniumRequestException("Current window is dead.")
 
         if not self.is_active:
             self._session.driver.switch_to.window(self.tab_handle)
         return self._session.driver
 
-    def switch(self) -> None:
+    def switch(self) -> bool:
         """Switch to tab (if possible)"""
 
-        if self.is_alive:
-            self._session.driver.switch_to.window(self.tab_handle)
-        else:
-            raise Exception(
+        if self.is_active:
+            # no need to switch
+            return False
+
+        if not self.is_alive:
+            raise SeleniumRequestException(
                 f"Current window is dead. Window Handle={self.tab_handle} does not exist"
                 f" in all currently open window handles: {self._session.driver.window_handles}"
             )
+
+        self._session.driver.switch_to.window(self.tab_handle)
+        return True
 
     def open(self, url):
         """Open a url in the tab"""
@@ -142,29 +142,44 @@ class Tab:
         self.driver.get(url)
         return self
 
-    def click(self, element):
+    def click(self, element) -> bool:
         """Click a given element on the page represented by the tab"""
 
         try:
             self.switch()
             element.click()
+            return True
         except Exception as e:  # noqa
             try:
                 self.driver.execute_script("arguments[0].click();", element)
+                return True
             except Exception as e:  # noqa
-                pass
+                return False
+
+    @staticmethod
+    def element_source(element: webelement):
+        return element.get_attribute("outerHTML")
+
+    @staticmethod
+    def element_location(element: webelement) -> dict:
+        return element.location
+
+    @staticmethod
+    def element_size(element: webelement) -> dict:
+        return element.size
+
+    @staticmethod
+    def element_center(element):
+        pass
+
+    def run_js(self, script, *args):
+        """Run JavaScript on the page"""
+        return self.driver.execute_script(script, *args)
 
     def get_all_attributes_of_element(self, element) -> dict:
         """Get all attributes of a given element on the tab's page"""
 
-        attr_dict = self.driver.execute_script(
-            "var items = {}; for (index = 0; index < arguments[0].attributes.length; ++index) {"
-            " items[arguments[0].attributes[index].name] = arguments[0].attributes[index].value };"
-            " return items;",
-            element,
-        )
-
-        return attr_dict
+        return self.run_js(scripts.ELEMENT_ATTRIBUTES, element)
 
     def get_attribute(self, element, attr_name):
         """Get specific attributes of a given element on the tab's page"""
@@ -181,44 +196,51 @@ class Tab:
             return elements
         elif elements:
             if len(elements) > 1:
-                raise Exception("Multiple elements found")
+                raise SeleniumRequestException("Multiple elements found")
             else:
                 return elements[0]
         else:
             return None
 
-    def scroll(self, times=3, wait=1):
+    @staticmethod
+    def _scroll(clicks: int = 10, times: int = 1, direction=1):
         """Usual scroll"""
 
-        for _ in range(times):
-            self.scroll_to_bottom(wait=wait)
+        # TODO: May not work in all the situations and OS'
 
-    def scroll_to_bottom(self, wait=1):
-        """Scroll to bottom of the page"""
+        for _ in range(times):
+            pyautogui.scroll(direction * clicks)
+            time.sleep(0.5)
+
+    def scroll_up(self, times: int = 1, clicks: int = 20):
+        self.switch()
+        self._scroll(clicks=clicks, times=times, direction=1)
+
+    def scroll_down(self, times: int = 1, clicks: int = 20):
+        self.switch()
+        self._scroll(clicks=clicks, times=times, direction=-1)
+
+    def scroll_to_bottom(self):
+        """Scroll to the bottom of the page"""
 
         html = self.driver.find_element_by_tag_name("html")
         html.send_keys(Keys.END)
-        time.sleep(wait)
 
     def infinite_scroll(self, retries=5):
         """Infinite (so many times) scroll"""
 
         for _ in range(max(1, retries)):
-            try:
+            with contextlib.suppress(Exception):  # noqa
                 last_height = 0
 
                 while True:
-                    self.scroll()
-                    new_height = self.driver.execute_script(
-                        "return document.documentElement.scrollHeight"
-                    )
+                    self.scroll_to_bottom()
+                    new_height = self.run_js(scripts.PAGE_HEIGHT)
 
                     if new_height == last_height:
                         break
 
                     last_height = new_height
-            except Exception as e:  # noqa
-                pass
 
     def wait_for_presence_of_element(self, element, wait):
         return WebDriverWait(self.driver, wait).until(EC.presence_of_element_located(element))
@@ -241,11 +263,9 @@ class Tab:
         self.wait_for_visibility(by, key, wait)
         return ele
 
-    def wait_until_staleness(self, element, wait=5):
+    def wait_until_staleness(self, element, wait: int = 5):
         """Wait until the passed element is no longer present on the page"""
         WebDriverWait(self.driver, wait).until(EC.staleness_of(element))
-
-        time.sleep(0.5)
 
 
 class TabManager:
@@ -276,9 +296,9 @@ class TabManager:
         return self.get(tab_handle)
 
     def get_blank_tab(self) -> Tab:
-        """Get a blank tab to work with. Switchs to the newly created tab"""
+        """Get a blank tab to work with. Switches to the newly created tab"""
         windows_before = self.driver.current_window_handle
-        self.driver.execute_script("""window.open('{}');""".format("about:blank"))
+        self.driver.execute_script("window.open('about:blank');")
         windows_after = self.driver.window_handles
         new_window = [x for x in windows_after if x != windows_before][-1]
         self.driver.switch_to.window(new_window)
@@ -286,19 +306,26 @@ class TabManager:
         new_tab.switch()
         return new_tab
 
-    def open_new_tab(self, url):
-        """Open a new tab with with a given URL"""
+    def open_new_tab(self, url, wait_for_tag="body", wait_sec=30):
+        """Open a new tab with a given URL.
+
+        It also waits for a specified number of seconds for the specified tag to appear on the page"""
 
         blank_tab = self.get_blank_tab()
-        blank_tab.start_url = url  # Not a recommended way to update object attributes
+        blank_tab.start_url = url
+
         blank_tab.switch()
         blank_tab.open(url)
+
+        if wait_for_tag:
+            blank_tab.wait_for_presence_and_visibility(by=By.TAG_NAME, key=wait_for_tag, wait=wait_sec)
+
         return blank_tab
 
     def all(self):
         """All tabs of the browser"""
         curr_tab = self.current_tab()
-        all_tabs = [tab for tab in self._all_tabs.values()]
+        all_tabs = list(self._all_tabs.values())
         if curr_tab:
             curr_tab.switch()
         return all_tabs
@@ -324,7 +351,7 @@ class TabManager:
         if isinstance(tab, Tab):
             return tab.tab_handle in self._all_tabs.keys()
 
-        raise Exception("Invalid type for tab.")
+        raise SeleniumRequestException("Invalid type for tab.")
 
     def remove(self, tab: Tab) -> [Tab, None]:
         """Remove a tab from the list of tabs"""
@@ -332,37 +359,43 @@ class TabManager:
         if isinstance(tab, Tab):
             return self._all_tabs.pop(tab.tab_handle, None)
 
-        raise Exception("Invalid type for tab.")
+        raise SeleniumRequestException("Invalid type for tab.")
 
+    @property
     def first_tab(self) -> Tab | None:
         """First tab from the list of tabs of the browser"""
         try:
             _, tab = list(self._all_tabs.items())[0]
             return tab
-        except:  # noqa
+        except Exception:  # noqa
             return None
 
+    @property
     def last_tab(self) -> Tab | None:
         """Last tab from the list of tabs of the browser"""
         try:
             _, tab = list(self._all_tabs.items())[-1]
             return tab
-        except:  # noqa
+        except Exception:  # noqa
             return None
 
     def switch_to_first_tab(self):
-        """Switch to the first tab"""
+        """Attempts to switch to the first tab"""
 
-        first_tab = self.first_tab()
-        if first_tab and first_tab.is_alive and self.exist(first_tab):
-            first_tab.switch()
+        if self.first_tab and self.first_tab.is_alive and self.exist(self.first_tab):
+            self.first_tab.switch()
+            return True
+
+        return False
 
     def switch_to_last_tab(self):
         """Switch to the last tab"""
 
-        last_tab = self.last_tab()
-        if last_tab and last_tab.is_alive and self.exist(last_tab):
-            last_tab.switch()
+        if self.last_tab and self.last_tab.is_alive and self.exist(self.last_tab):
+            self.last_tab.switch()
+            return True
+
+        return False
 
 
 class Browser:
@@ -376,16 +409,12 @@ class Browser:
         "FireFox": "FIREFOX_DRIVER_PATH",
     }
 
-    def __init__(
-        self, name, driver_path=None, implicit_wait: int = 0, user_agent: str = "", headless=False
-    ):
+    def __init__(self, name, driver_path=None, implicit_wait: int = 0, user_agent: str = "", headless=False):
         self.name = name
 
-        self.implicit_wait = implicit_wait or self._get_attr_or_env("IMPLICIT_WAIT_TIME")
-        self.user_agent = user_agent or self._get_attr_or_env(
-            "SELENIUM_USER_AGENT", raise_exception=False
-        )
-        self.driver_path = driver_path or self.get_driver_path()
+        self.implicit_wait = implicit_wait
+        self.user_agent = user_agent
+        self.driver_path = driver_path
 
         self._session = Session(
             name,
@@ -394,7 +423,7 @@ class Browser:
             implicit_wait=self.implicit_wait,
             user_agent=self.user_agent,
         )
-        self.tabs = TabManager(self._session)
+        self._tabs = TabManager(self._session)
 
     def __enter__(self):
         return self
@@ -402,95 +431,101 @@ class Browser:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def get_driver_path(self):
-        """Get path of the driver from env or settings"""
+    @property
+    def tabs(self) -> list:
+        """Returns all open tabs"""
+        return self._tabs.all()
 
-        driver_env = self.BROWSER_DRIVER_PATH_ENV[self.name]
-        return self._get_attr_or_env(driver_env)
-
-    def get_current_tab(self):
+    @property
+    def current_tab(self) -> Tab:
         """get current tab from the list of the tabs"""
-        return self.tabs.current_tab()
+        return self._tabs.current_tab()
 
-    def _get_attr_or_env(self, env, raise_exception=True):
-        if hasattr(self, env):
-            return getattr(self, env)
+    @property
+    def first_tab(self) -> Tab:
+        return self._tabs.first_tab
 
-        driver_path = os.getenv(env, None)
-
-        if driver_path:
-            return os.getenv(env, None)
-
-        if raise_exception:
-            raise Exception(f"Please define {env} as class attribute or environment variable.")
+    @property
+    def last_tab(self) -> Tab:
+        return self._tabs.last_tab
 
     def open(self, url):
         """Starts a new tab with the given url at end of list of tabs."""
-        self.tabs.switch_to_last_tab()
-        curr_tab = self.tabs.open_new_tab(url)
+
+        self._tabs.switch_to_last_tab()
+        curr_tab = self._tabs.open_new_tab(url)
         curr_tab.switch()
         return curr_tab
 
-    def get_all_tabs(self) -> list:
-        return self.tabs.all()
-
     def _remove_tab(self, tab: Tab):
-        """For Internal Use Only:
+        """For Internal Use Only: Closes a given tab.
 
         The order of operation is extremely important here. Practice extreme caution while editing this."""
-        assert tab.is_alive is True
-        assert self.tabs.exist(tab) is True
+
+        assert tab.is_alive is True  # noqa # nosec
+        assert self._tabs.exist(tab) is True  # noqa # nosec
+
         tab.switch()
-        self.tabs.remove(tab)
+        self._tabs.remove(tab)
         self._session.driver.close()
-        assert tab.is_alive is False
-        assert self.tabs.exist(tab) is False
+
+        assert tab.is_alive is False  # noqa # nosec
+        assert self._tabs.exist(tab) is False  # noqa # nosec
 
     def close_tab(self, tab: Tab):
         """Close a given tab"""
-        if self.tabs.exist(tab):
+        if self._tabs.exist(tab):
             tab.switch()
             self._remove_tab(tab=tab)
-
-            self.tabs.switch_to_last_tab()
+            self._tabs.switch_to_last_tab()
             return True
         else:
-            raise Exception("Tab does not exist.")
+            raise SeleniumRequestException("Tab does not exist.")
 
     def close(self):
         """Close browser"""
-        self.tabs = {}
+        self._tabs = {}
         self._session.close()
 
 
 if __name__ == "__main__":
-    chrome_driver = r"/Users/dayhatt/workspace/drivers/chromedriver"
-
-    with Browser(name="Chrome", driver_path=chrome_driver, implicit_wait=10) as browser:
-        google = browser.open("https://google.com")
+    with Browser(name="Chrome", driver_path=None, implicit_wait=10) as browser:
+        google = browser.open("https://google.com")  # a `Tab` object
         yahoo = browser.open("https://yahoo.com")
         bing = browser.open("https://bing.com")
         duck_duck = browser.open("https://duckduckgo.com/")
 
-        print(browser.get_all_tabs())
+        yahoo.scroll_up(times=5)
+        yahoo.scroll_down(times=10)
+
+        print(browser.tabs)
+        print(browser.current_tab)
+        print(browser.first_tab)
+        print(browser.last_tab)
+
+        print(browser.last_tab.switch())
+
+        print(google.page_source)
+        print(google.title)
+        print(google.url)
+        print(google.is_active)
+        print(google.is_alive)
 
         browser.close_tab(bing)
-        print(browser.get_all_tabs())
+        print(browser.tabs)
 
-        print(browser.get_current_tab())
-        time.sleep(5)
+        print(browser.current_tab)
 
         yahoo.switch()
-        print(browser.get_current_tab())
-        time.sleep(5)
-
+        print(browser.current_tab)
         google.switch()
-        print(browser.get_current_tab())
-        time.sleep(5)
+
+        print(browser.current_tab)
 
         browser.close_tab(yahoo)
-        time.sleep(5)
+
+        print(yahoo.is_alive)
+        print(yahoo.is_active)
 
         print(google.driver.title, google.title)
-
-        print(browser.get_all_tabs())
+        print(google.driver.title == google.title)

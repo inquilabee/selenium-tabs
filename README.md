@@ -1,6 +1,8 @@
 ### Simple Selenium
 
-The aim of this package is to quickly get started with working with selenium for simple browser automation tasks.
+Selenium with Tab Management
+
+<small> With all the already available flexibility and features of Selenium </small>
 
 ### Installation
 
@@ -10,13 +12,36 @@ Install from PyPI
 pip install simpleselenium
 ```
 
+### Core Idea
+
+A `browser` has many `tabs`.
+
+Action/activity on `Tab` object
+- Check if the tab is alive (i.e. it has not been closed)
+- Switch to a tab
+- See/obtain page source, title and headings
+- work on a specific tab (click elements, scroll and so on.)
+- ... many more
+
+Action/activity on `Browser` object
+- Open a new tab with url
+- Get a list of open tabs
+- Get active tab
+- Switch to a tab of the browser (first, last or any one).
+- close a tab
+- Close the browser
+
+### Working with driver objects
+
+`driver` object available on any `Tab` object.
+
 ### Features
 
-Some basic feature is being listed below.
+Some basic features are being listed below (also see the `Usage` section below):
 
 - easy management of different tabs
 - switching to a tab is super easy
-- know if a tab is active or alive
+- know if a tab is active (current tab) or alive
 - closing a tab is easy as `browser.close_tab(tab_object)`
 - Several (built-in) functions
     - `tab.infinite_scroll()`
@@ -35,58 +60,54 @@ method off it which returns a Tab object.
 #### Browser
 
 ```python
-import time  # just to slow down stuffs and see things for testing
-from simpleselenium import Browser
 
-chrome_driver = r"/path/to/chromedriver"
+from simpleselenium import Browser, Tab
 
-with Browser(name="Chrome", driver_path=chrome_driver, implicit_wait=10) as browser:
-    google = browser.open("https://google.com")
-    yahoo = browser.open("https://yahoo.com")
-    bing = browser.open("https://bing.com")
-    duck_duck = browser.open("https://duckduckgo.com/")
+# name is one of "Chrome" or "FireFox"
+# driver path is not required in most cases
 
-    print(yahoo)  # A Tab Object
-    print(yahoo.is_alive)
-    print(yahoo.is_active)
-    print(dir(yahoo))  # All methods and attributes of Tab Objects
+with Browser(name="Chrome", driver_path=None, implicit_wait=10) as browser:
+        google: Tab = browser.open("https://google.com") # a `Tab` object
+        yahoo = browser.open("https://yahoo.com")
+        bing = browser.open("https://bing.com")
+        duck_duck = browser.open("https://duckduckgo.com/")
 
-    print(browser.get_all_tabs())  # List of tab objects
+        yahoo.scroll_up(times=5)
+        yahoo.scroll_down(times=10)
 
-    print(browser.tabs.all())
-    print(browser.tabs)  # TabManager object
-    print(dir(browser.tabs))  # All methods and attributes of TabManager Objects
+        print(browser.tabs)
+        print(browser.current_tab)
+        print(browser.first_tab)
+        print(browser.last_tab)
 
-    browser.close_tab(bing)  # close a browser tab
-    print(browser.tabs.all())
+        print(browser.last_tab.switch())
 
-    print(browser.get_current_tab())  # current tab
-    time.sleep(5)
+        print(google.page_source)
+        print(google.title)
+        print(google.url)
+        print(google.is_active)
+        print(google.is_alive)
 
-    yahoo.switch()  # switch/focus/tap to/on `yahoo` tab
-    print(browser.get_current_tab())
-    time.sleep(5)
+        browser.close_tab(bing)
+        print(browser.tabs)
 
-    google.switch()
-    print(browser.get_current_tab())
-    time.sleep(5)
+        print(browser.current_tab)
 
-    browser.close_tab(yahoo)
-    time.sleep(5)
+        yahoo.switch()
+        print(browser.current_tab)
+        google.switch()
 
-    print(google.driver)  # Usual selenium driver object which can be worked upon
+        print(browser.current_tab)
 
-    print(google.driver.title, google.title)
+        browser.close_tab(yahoo)
 
-    print(google.scroll_to_bottom())
-    print(google.is_active)
-    print(google.is_alive)
-    print(bing.is_alive)  # False, it has been deleted.
+        print(yahoo.is_alive)
+        print(yahoo.is_active)
 
-    print(browser.get_all_tabs())
+        print(google.driver.title, google.title)
+        print(google.driver.title == google.title)
 ```
 
 ### TODO
 
 - Complete documentation
-- Test Code

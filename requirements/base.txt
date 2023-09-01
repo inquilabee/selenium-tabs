@@ -1,0 +1,5 @@
+selenium==4.12.0
+PyAutoGUI==0.9.54
+
+django-environ
+python-dotenv
