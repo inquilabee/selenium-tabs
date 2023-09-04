@@ -1,0 +1,2 @@
+class SeleniumRequestException(Exception):
+    pass
