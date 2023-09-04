@@ -20,7 +20,12 @@ Action/activity on `Tab` object
 - Check if the tab is alive (i.e. it has not been closed)
 - Switch to a tab
 - See/obtain page source, title and headings
-- work on a specific tab (click elements, scroll and so on.)
+- inject JQuery and select elements
+- work on a specific tab
+- click elements
+- scroll (up or down)
+- infinite scroll
+- CSS selection made easy
 - ... many more
 
 Action/activity on `Browser` object
@@ -49,7 +54,7 @@ Some basic features are being listed below (also see the `Usage` section below):
     - `tab.scroll_to_bottom()`
     - `tab.click(element_on_page)`
     - `tab.switch()` to focus on tab i.e. make it the active tab
-- Can't find a way to use usual selenium methods? Use `tab.driver` object to access the browser/driver object and use
+- Can't find a way to use usual selenium methods? Use `Tab.driver` object to access the browser/driver object and use
   accordingly
 
 ### Usage
@@ -66,11 +71,33 @@ from simpleselenium import Browser, Tab
 # name is one of "Chrome" or "FireFox"
 # driver path is not required in most cases
 
-with Browser(name="Chrome", driver_path=None, implicit_wait=10) as browser:
+with Browser(name="Chrome", implicit_wait=10) as browser:
         google: Tab = browser.open("https://google.com") # a `Tab` object
         yahoo = browser.open("https://yahoo.com")
         bing = browser.open("https://bing.com")
         duck_duck = browser.open("https://duckduckgo.com/")
+
+        print(browser.tabs)
+        print(browser.current_tab)
+
+        for tab in browser.tabs:
+            print(tab)
+
+        yahoo.inject_jquery()
+
+        for item in yahoo.run_js("""return $(".stream-items a");"""):
+            result = yahoo.run_jquery(
+                script_code="""
+                        return $(arguments[0]).text();
+                    """,
+                element=item,
+            )
+
+            print(result)
+
+        for item in yahoo.css(".stream-items"):
+            for a in item.css("a"):
+                print(a, a.text)
 
         yahoo.scroll_up(times=5)
         yahoo.scroll_down(times=10)

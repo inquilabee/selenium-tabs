@@ -8,3 +8,4 @@ sourcery
 mypy
 bandit
 tox
+pytest

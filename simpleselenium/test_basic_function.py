@@ -4,7 +4,7 @@ from simpleselenium.browser import Browser
 def test_run_without_exception():
     err_msg = "Something went wrong. Report immediately."
 
-    with Browser(name="Chrome", driver_path=None, implicit_wait=10, headless=True) as browser:
+    with Browser(name="Chrome", implicit_wait=10, headless=True) as browser:
         google = browser.open("https://google.com")
         yahoo = browser.open("https://yahoo.com")
         bing = browser.open("https://bing.com")

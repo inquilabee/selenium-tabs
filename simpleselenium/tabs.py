@@ -11,6 +11,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 import settings
 from simpleselenium import scripts
+from simpleselenium.element_selectors import SelectableCSS
 from simpleselenium.exceptions import SeleniumRequestException
 from simpleselenium.session import Session
 
@@ -59,9 +60,29 @@ class Tab:
     def maximise(self):
         self._session.maximise_window()
 
-    def css(self):
-        # PyQuery based selector
-        pass
+    def css(self, css_selector: str) -> list:
+        return SelectableCSS(self.driver).css(css_selector)
+
+    def run_jquery(self, script_code: str, element: webelement.WebElement, *args):
+        # TODO: Allow multiple elements as input and check (using regex?) that passed elements are wrapped inside $
+        return self.run_js(script_code, element, *args)
+
+    def inject_jquery(self, by: str = "file", wait: int = 2):
+        """
+        SO: https://stackoverflow.com/a/57947790/8414030
+        """
+        self._inject_jquery_file(wait=wait) if by == "file" else self._inject_jquery_cdn(wait=wait)
+
+    def _inject_jquery_cdn(self, wait: int = 2):
+        self.driver.execute_script(scripts.JQUERY_INJECTION)
+
+        time.sleep(wait)
+
+    def _inject_jquery_file(self, wait: int = 2):
+        with open("../data/jquery.js") as f:
+            self.driver.execute_script(f.read())
+
+        time.sleep(wait)
 
     @property
     def is_alive(self):
@@ -177,7 +198,7 @@ class Tab:
         else:
             return None
 
-    def scroll(self, times=1, wait=3, clicks: int = None, direction: int = 1):
+    def scroll(self, times=1, clicks: int = None, direction: int = 1, wait: int = 3):
         """Usual scroll"""
         self.switch()
 
@@ -244,6 +265,9 @@ class Tab:
         self.wait_for_visibility(by, key, wait)
         return ele
 
+    def wait_for_body_tag_presence_and_visibility(self, wait: int = 5):
+        self.wait_for_presence_and_visibility(by=By.TAG_NAME, key="body", wait=wait)
+
     def wait_until_staleness(self, element, wait: int = 5):
         """Wait until the passed element is no longer present on the page"""
         WebDriverWait(self.driver, wait).until(EC.staleness_of(element))
@@ -275,7 +299,7 @@ class TabManager:
         return list(self._all_tabs.values())[index]
 
     def __str__(self):
-        return " ".join(self.all())
+        return " ".join(list(self))  # noqa
 
     def current_tab(self) -> [Tab, None]:
         """Get current active tab"""
@@ -297,7 +321,7 @@ class TabManager:
 
         return new_tab
 
-    def open_new_tab(self, url, wait_for_tag="body", wait_sec=30, full_screen: bool = True):
+    def open_new_tab(self, url, wait_sec=30, full_screen: bool = True):
         """Open a new tab with a given URL.
 
         It also waits for a specified number of seconds for the specified tag to appear on the page"""
@@ -308,18 +332,9 @@ class TabManager:
         blank_tab.switch()
         blank_tab.open(url)
 
-        if wait_for_tag:
-            blank_tab.wait_for_presence_and_visibility(by=By.TAG_NAME, key=wait_for_tag, wait=wait_sec)
+        blank_tab.wait_for_body_tag_presence_and_visibility(wait=wait_sec)
 
         return blank_tab
-
-    def all(self):
-        """All tabs of the browser"""
-        curr_tab = self.current_tab()
-        all_tabs = list(self._all_tabs.values())
-        if curr_tab:
-            curr_tab.switch()
-        return all_tabs
 
     def create(self, tab_handle, full_screen):
         """Create a Tab object"""
@@ -332,17 +347,15 @@ class TabManager:
         """Add a tab to the list of tabs"""
         self._all_tabs.update({tab.tab_handle: tab})
 
-    def get(self, tab_handle) -> [Tab, None]:
+    def get(self, tab_handle) -> Tab | None:
         """get a Tab object given their handle/id"""
+
         return self._all_tabs.get(tab_handle, None)
 
     def exist(self, tab: Tab) -> bool:
         """Check if a tab exists"""
 
-        if isinstance(tab, Tab):
-            return tab.tab_handle in self._all_tabs.keys()
-
-        raise SeleniumRequestException("Invalid type for tab.")
+        return tab in self
 
     def remove(self, tab: Tab) -> [Tab, None]:
         """Remove a tab from the list of tabs"""
@@ -356,21 +369,13 @@ class TabManager:
     def first_tab(self) -> Tab | None:
         """First tab from the list of tabs of the browser"""
 
-        if self._all_tabs:
-            _, tab = list(self._all_tabs.items())[0]
-            return tab
-
-        return None
+        return self[0] if self._all_tabs else None
 
     @property
     def last_tab(self) -> Tab | None:
         """Last tab from the list of tabs of the browser"""
 
-        if self._all_tabs:
-            _, tab = list(self._all_tabs.items())[-1]
-            return tab
-
-        return None
+        return self[-1] if self._all_tabs else None
 
     def switch_to_tab(self, tab: Tab):
         if tab and tab.is_alive and self.exist(tab):

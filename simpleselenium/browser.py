@@ -14,7 +14,6 @@ class Browser:
     def __init__(
         self,
         name,
-        driver_path=None,
         implicit_wait: int = 0,
         user_agent: str = None,
         headless: bool = False,
@@ -24,11 +23,9 @@ class Browser:
 
         self.implicit_wait = implicit_wait
         self.user_agent = user_agent
-        self.driver_path = driver_path
 
         self._session = Session(
             name,
-            driver_path,
             headless=headless,
             implicit_wait=self.implicit_wait,
             user_agent=self.user_agent,
@@ -45,7 +42,7 @@ class Browser:
     @property
     def tabs(self) -> list:
         """Returns all open tabs"""
-        return self._tabs.all()
+        return list(self._tabs)  # noqa
 
     @property
     def current_tab(self) -> Tab:
@@ -108,21 +105,41 @@ class Browser:
 if __name__ == "__main__":
     err_msg = "Something went wrong. Report!"
 
-    with Browser(name="Chrome", driver_path=None, implicit_wait=10) as browser:
-        google: Tab = browser.open("https://google.com")  # a `Tab` object
+    with Browser(name="Chrome", implicit_wait=10) as browser:
+        google: Tab = browser.open("https://google.com")
         yahoo = browser.open("https://yahoo.com")
         bing = browser.open("https://bing.com")
         duck_duck = browser.open("https://duckduckgo.com/")
 
         yahoo.scroll_down(times=5)
         yahoo.scroll_up(times=5)
-        yahoo.scroll(times=5)
+        yahoo.scroll(times=5, wait=20)
 
-        print(len(browser.tabs))
         assert len(browser.tabs) == 4, err_msg  # noqa
+        assert google in browser.tabs, err_msg  # noqa
+        assert browser.tabs[0] == google, err_msg  # noqa
+
+        for tab in browser.tabs:
+            print(tab)
 
         print(browser.tabs)
         print(browser.current_tab)
+
+        yahoo.inject_jquery()
+
+        for item in yahoo.run_js("""return $(".stream-items a");"""):
+            result = yahoo.run_jquery(
+                script_code="""
+                        return $(arguments[0]).text();
+                    """,
+                element=item,
+            )
+
+            print(result)
+
+        for item in yahoo.css(".stream-items"):
+            for a in item.css("a"):
+                print(a, a.text)
 
         assert yahoo == browser.current_tab, err_msg  # noqa
 
@@ -135,7 +152,7 @@ if __name__ == "__main__":
         print(browser.last_tab.switch())
         assert browser.current_tab == duck_duck, err_msg  # noqa
 
-        # print(google.page_source)
+        print(google.page_source)
         print(google.title)
         print(google.url)
 

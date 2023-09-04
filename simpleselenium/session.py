@@ -30,7 +30,6 @@ class Session:
     def __init__(
         self,
         browser_name,
-        driver_path,
         implicit_wait,
         user_agent,
         headless: bool = False,
@@ -45,7 +44,6 @@ class Session:
         self.user_agent = user_agent
         self.headless = headless
 
-        self.driver_path = driver_path
         self.full_screen = full_screen
         self._driver: webdriver = self._get_driver()
 
