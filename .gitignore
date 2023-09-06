@@ -14,6 +14,7 @@ __pycache__/
 .Python
 build/
 develop-eggs/
+develop-eggs/
 dist/
 downloads/
 eggs/
@@ -134,3 +135,5 @@ dmypy.json
 
 # Cache
 **_cache**
+!/simpleselenium/logs/
+!/logs/

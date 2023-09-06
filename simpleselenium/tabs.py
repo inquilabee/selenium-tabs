@@ -9,8 +9,7 @@ from selenium.webdriver.remote import webelement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-import settings
-from simpleselenium import scripts
+from simpleselenium import scripts, settings
 from simpleselenium.element_selectors import SelectableCSS
 from simpleselenium.exceptions import SeleniumRequestException
 from simpleselenium.session import Session
@@ -67,7 +66,7 @@ class Tab:
         # TODO: Allow multiple elements as input and check (using regex?) that passed elements are wrapped inside $
         return self.run_js(script_code, element, *args)
 
-    def inject_jquery(self, by: str = "file", wait: int = 2):
+    def inject_jquery(self, by: str = "cdn", wait: int = 2):
         """
         SO: https://stackoverflow.com/a/57947790/8414030
         """
@@ -79,7 +78,9 @@ class Tab:
         time.sleep(wait)
 
     def _inject_jquery_file(self, wait: int = 2):
-        with open("../data/jquery.js") as f:
+        # TODO: Check if it works from made package
+
+        with open(settings.JQUERY_INJECTION_FILE) as f:
             self.driver.execute_script(f.read())
 
         time.sleep(wait)
@@ -224,8 +225,11 @@ class Tab:
     def scroll_to_bottom(self, wait: int = None):
         """Scroll to the bottom of the page"""
 
-        html = self.driver.find_element_by_tag_name("html")
-        html.send_keys(Keys.END)
+        self.wait_for_presence_and_visibility(by=By.TAG_NAME, key="html", wait=wait or 5)
+        html = self.driver.find_elements(by=By.TAG_NAME, value="html")
+        html and html[0] and html[0].send_keys(Keys.END)
+
+        self.run_js(scripts.SCROLL_TO_WINDOW_HEIGHT, self.page_height)
 
         wait and time.sleep(wait)
 

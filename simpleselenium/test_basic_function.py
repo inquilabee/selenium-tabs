@@ -1,10 +1,16 @@
+from simpleselenium import settings
 from simpleselenium.browser import Browser
+
+logger = settings.getLogger(__name__)
+
+logger.info("Test Starts")
 
 
 def test_run_without_exception():
     err_msg = "Something went wrong. Report immediately."
 
     with Browser(name="Chrome", implicit_wait=10, headless=True) as browser:
+        logger.info("Test Starts")
         google = browser.open("https://google.com")
         yahoo = browser.open("https://yahoo.com")
         bing = browser.open("https://bing.com")

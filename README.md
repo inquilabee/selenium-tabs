@@ -69,7 +69,8 @@ method off it which returns a Tab object.
 from simpleselenium import Browser, Tab
 
 # name is one of "Chrome" or "FireFox"
-# driver path is not required in most cases
+# driver path is not required in most cases.
+# The project has been configured to auto-download drivers.
 
 with Browser(name="Chrome", implicit_wait=10) as browser:
         google: Tab = browser.open("https://google.com") # a `Tab` object

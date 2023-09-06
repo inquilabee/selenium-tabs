@@ -111,6 +111,7 @@ if __name__ == "__main__":
         bing = browser.open("https://bing.com")
         duck_duck = browser.open("https://duckduckgo.com/")
 
+        yahoo.scroll_to_bottom()
         yahoo.scroll_down(times=5)
         yahoo.scroll_up(times=5)
         yahoo.scroll(times=5, wait=20)
@@ -125,7 +126,7 @@ if __name__ == "__main__":
         print(browser.tabs)
         print(browser.current_tab)
 
-        yahoo.inject_jquery()
+        yahoo.inject_jquery(by="cdn")
 
         for item in yahoo.run_js("""return $(".stream-items a");"""):
             result = yahoo.run_jquery(
