@@ -68,27 +68,45 @@ method off it which returns a Tab object.
 
 from simpleselenium import Browser, Tab
 
-# name is one of "Chrome" or "FireFox"
-# driver path is not required in most cases.
+# The `name` argument is one of "Chrome" or "FireFox".
 # The project has been configured to auto-download drivers.
 
-with Browser(name="Chrome", implicit_wait=10) as browser:
-        google: Tab = browser.open("https://google.com") # a `Tab` object
+
+    with Browser(name="Chrome", implicit_wait=10) as browser:
+        google: Tab = browser.open("https://google.com")
         yahoo = browser.open("https://yahoo.com")
         bing = browser.open("https://bing.com")
         duck_duck = browser.open("https://duckduckgo.com/")
 
-        print(browser.tabs)
-        print(browser.current_tab)
+        # Scroll on the page
+
+        # yahoo.scroll_to_bottom()
+        # yahoo.scroll_down(times=2)
+        # yahoo.scroll_up(times=2)
+        # yahoo.scroll(times=2, wait=5)
+
+        # Working with tabs -- loop through it, access using index and so on
+
+        assert len(browser.tabs) == 4, err_msg  # noqa
+        assert google in browser.tabs, err_msg  # noqa
+        assert browser.tabs[0] == google, err_msg  # noqa
 
         for tab in browser.tabs:
             print(tab)
 
-        yahoo.inject_jquery()
+        print(browser.tabs)
+        print(browser.current_tab)
 
-        for item in yahoo.run_js("""return $(".stream-items a");"""):
-            result = yahoo.run_jquery(
-                script_code="""
+        # Selecting elements with JQuery
+
+        print(yahoo.jq("a"))
+        print(yahoo.jquery("a"))  # same as above
+
+        print(yahoo.jquery.find(".streams"))
+
+        for item in yahoo.jquery.execute("""return $(".stream-items a");"""):
+            result = yahoo.jquery.query(
+                script="""
                         return $(arguments[0]).text();
                     """,
                 element=item,
@@ -96,33 +114,49 @@ with Browser(name="Chrome", implicit_wait=10) as browser:
 
             print(result)
 
+        # Selecting using CSS Selectors (no JQuery needed)
+
         for item in yahoo.css(".stream-items"):
             for a in item.css("a"):
                 print(a, a.text)
 
-        yahoo.scroll_up(times=5)
-        yahoo.scroll_down(times=10)
+        assert yahoo == browser.current_tab, err_msg  # noqa
 
-        print(browser.tabs)
-        print(browser.current_tab)
         print(browser.first_tab)
+        assert google == browser.first_tab, err_msg  # noqa
+
         print(browser.last_tab)
+        assert duck_duck == browser.last_tab, err_msg  # noqa
 
         print(browser.last_tab.switch())
+        assert browser.current_tab == duck_duck, err_msg  # noqa
 
-        print(google.page_source)
+        # Some `Tab` attributes/properties
+
         print(google.title)
         print(google.url)
+
+        print(google.page_source)
+        print(google.page_html)
+
+        print(google.page_height)
+        print(google.user_agent)
         print(google.is_active)
         print(google.is_alive)
+
+        # Closing a tab
 
         browser.close_tab(bing)
         print(browser.tabs)
 
         print(browser.current_tab)
 
+        # Switching to a tab
+
         yahoo.switch()
+
         print(browser.current_tab)
+
         google.switch()
 
         print(browser.current_tab)
@@ -132,8 +166,14 @@ with Browser(name="Chrome", implicit_wait=10) as browser:
         print(yahoo.is_alive)
         print(yahoo.is_active)
 
+        # Accessing the driver object
+
         print(google.driver.title, google.title)
-        print(google.driver.title == google.title)
+        assert google.driver.title == google.title, err_msg  # noqa
+
+        # Query using the powerful pyquery library
+
+        d = yahoo.pyquery  # noqa
 ```
 
 ### TODO

@@ -11,7 +11,6 @@ BASE_DIR = Path(__file__).parent
 LOG_CONF_FILE = "log_config/log_config.yaml"
 ENV_FILE = "../.env"
 
-
 # ========
 # LOGGING
 # ========

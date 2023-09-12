@@ -57,10 +57,12 @@ class Browser:
     def last_tab(self) -> Tab:
         return self._tabs.last_tab
 
-    def user_agent(self):
-        pass
+    def unmanaged_tabs(self) -> list[Tab]:
+        """Tabs which have not been created using `Browser.open()` method."""
 
-    def open(self, url) -> Tab:
+        return self._tabs.unmanaged_tabs()
+
+    def open(self, url: str = None) -> Tab:
         """Starts a new tab with the given url at the end of the list of tabs."""
 
         self._tabs.switch_to_last_tab()
@@ -111,10 +113,14 @@ if __name__ == "__main__":
         bing = browser.open("https://bing.com")
         duck_duck = browser.open("https://duckduckgo.com/")
 
-        yahoo.scroll_to_bottom()
-        yahoo.scroll_down(times=5)
-        yahoo.scroll_up(times=5)
-        yahoo.scroll(times=5, wait=20)
+        # Scroll on the page
+
+        # yahoo.scroll_to_bottom()
+        # yahoo.scroll_down(times=2)
+        # yahoo.scroll_up(times=2)
+        # yahoo.scroll(times=2, wait=5)
+
+        # Working with tabs -- loop through it, access using index and so on
 
         assert len(browser.tabs) == 4, err_msg  # noqa
         assert google in browser.tabs, err_msg  # noqa
@@ -126,17 +132,19 @@ if __name__ == "__main__":
         print(browser.tabs)
         print(browser.current_tab)
 
-        yahoo.inject_jquery(by="cdn")
+        # Selecting elements with JQuery
 
-        for item in yahoo.run_js("""return $(".stream-items a");"""):
-            result = yahoo.run_jquery(
-                script_code="""
+        for item in yahoo.jquery.execute("""return $(".stream-items a");"""):
+            result = yahoo.jquery.query(
+                script="""
                         return $(arguments[0]).text();
                     """,
                 element=item,
             )
 
             print(result)
+
+        # Selecting using CSS Selectors (no JQuery needed)
 
         for item in yahoo.css(".stream-items"):
             for a in item.css("a"):
@@ -153,16 +161,25 @@ if __name__ == "__main__":
         print(browser.last_tab.switch())
         assert browser.current_tab == duck_duck, err_msg  # noqa
 
-        print(google.page_source)
+        # Some `Tab` attributes/properties
+
         print(google.title)
         print(google.url)
 
+        print(google.page_source)
+        print(google.page_html)
+
+        print(google.page_height)
+        print(google.user_agent)
         print(google.is_active)
+        print(google.is_alive)
+
         assert google.is_active is True, err_msg  # noqa
         assert google.is_alive is True, err_msg  # noqa
 
-        print(google.is_alive)
         assert google.is_alive is True, err_msg  # noqa
+
+        # Closing a tab
 
         browser.close_tab(bing)
         print(browser.tabs)
@@ -176,9 +193,12 @@ if __name__ == "__main__":
         assert duck_duck.is_alive, err_msg  # noqa
         assert duck_duck.is_active, err_msg  # noqa
 
+        # Switching to a tab
+
         yahoo.switch()
 
         print(browser.current_tab)
+
         assert yahoo == browser.current_tab, err_msg  # noqa
         assert yahoo.is_alive, err_msg  # noqa
         assert yahoo.is_active, err_msg  # noqa
@@ -197,5 +217,11 @@ if __name__ == "__main__":
         assert yahoo.is_active is False, err_msg  # noqa
         assert yahoo.is_alive is False, err_msg  # noqa
 
+        # Accessing the driver object
+
         print(google.driver.title, google.title)
         assert google.driver.title == google.title, err_msg  # noqa
+
+        # Query using the powerful pyquery library
+
+        d = yahoo.pyquery  # noqa

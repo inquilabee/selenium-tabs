@@ -135,5 +135,5 @@ dmypy.json
 
 # Cache
 **_cache**
-!/simpleselenium/logs/
-!/logs/
+/simpleselenium/logs/
+/logs/

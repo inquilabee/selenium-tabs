@@ -6,7 +6,7 @@ class SelectableCSS:
     """Makes an element easily selectable by CSS using .css method"""
 
     def __str__(self):
-        return f"{self.__class__.__name__}({self.ele.get_attribute('html') or  self.ele.get_attribute('text')})"
+        return f"{self.__class__.__name__}({self.ele.get_attribute('html') or self.ele.get_attribute('text')})"
 
     def __init__(self, driver_or_ele: webelement.WebElement):
         self.ele = driver_or_ele
@@ -22,7 +22,3 @@ class SelectableCSS:
             return super().__getattribute__(item)
         except AttributeError:
             return getattr(self.ele, item)
-
-
-def select_using_jquery(driver, element: webelement.WebElement, script_code):
-    return driver.execute_script(script_code, element)

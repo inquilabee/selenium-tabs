@@ -2,6 +2,7 @@ import contextlib
 import time
 from collections import OrderedDict
 
+from pyquery import PyQuery
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -9,9 +10,11 @@ from selenium.webdriver.remote import webelement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from simpleselenium import scripts, settings
+from simpleselenium import settings
 from simpleselenium.element_selectors import SelectableCSS
 from simpleselenium.exceptions import SeleniumRequestException
+from simpleselenium.externals.jquery import BrowserJQuery
+from simpleselenium.js_scripts import scripts
 from simpleselenium.session import Session
 
 logger = settings.getLogger(__name__)
@@ -29,7 +32,7 @@ class Tab:
         self.full_screen = full_screen
 
     @property
-    def driver(self) -> webdriver:
+    def driver(self) -> webdriver.Chrome | webdriver.Firefox:
         """Switch to tab (if possible) and return the driver object."""
 
         if not self.is_alive:
@@ -42,7 +45,13 @@ class Tab:
 
     def __str__(self):
         return (
-            f"Tab(start_url={self.start_url}, active={self.is_active}, alive={self.is_alive}, handle={self.tab_handle})"
+            f"{self.__class__.__name__}"
+            f"("
+            f"start_url={self.start_url}, "
+            f"active={self.is_active}, "
+            f"alive={self.is_alive}, "
+            f"handle={self.tab_handle}"
+            f")"
         )
 
     __repr__ = __str__
@@ -59,31 +68,18 @@ class Tab:
     def maximise(self):
         self._session.maximise_window()
 
+    @property
+    def jquery(self) -> BrowserJQuery:
+        """Access jquery methods via this property"""
+        return BrowserJQuery(driver=self.driver)
+
+    @property
+    def jq(self) -> BrowserJQuery:
+        """Alias for jquery"""
+        return self.jquery
+
     def css(self, css_selector: str) -> list:
-        return SelectableCSS(self.driver).css(css_selector)
-
-    def run_jquery(self, script_code: str, element: webelement.WebElement, *args):
-        # TODO: Allow multiple elements as input and check (using regex?) that passed elements are wrapped inside $
-        return self.run_js(script_code, element, *args)
-
-    def inject_jquery(self, by: str = "cdn", wait: int = 2):
-        """
-        SO: https://stackoverflow.com/a/57947790/8414030
-        """
-        self._inject_jquery_file(wait=wait) if by == "file" else self._inject_jquery_cdn(wait=wait)
-
-    def _inject_jquery_cdn(self, wait: int = 2):
-        self.driver.execute_script(scripts.JQUERY_INJECTION)
-
-        time.sleep(wait)
-
-    def _inject_jquery_file(self, wait: int = 2):
-        # TODO: Check if it works from made package
-
-        with open(settings.JQUERY_INJECTION_FILE) as f:
-            self.driver.execute_script(f.read())
-
-        time.sleep(wait)
+        return SelectableCSS(self.driver).css(css_selector)  # noqa
 
     @property
     def is_alive(self):
@@ -113,8 +109,16 @@ class Tab:
         return self.driver.page_source
 
     @property
+    def page_html(self) -> str:
+        return self.jquery.page_html
+
+    @property
     def page_height(self):
         return self.run_js(scripts.PAGE_HEIGHT)
+
+    @property
+    def user_agent(self):
+        return self.run_js(scripts.USER_AGENT)
 
     def switch(self) -> bool:
         """Switch to tab (if possible)"""
@@ -142,27 +146,27 @@ class Tab:
     def click(self, element) -> bool:
         """Click a given element on the page represented by the tab"""
 
-        try:
+        with contextlib.suppress(Exception):
             self.switch()
             element.click()
             return True
-        except Exception as e:  # noqa
-            try:
-                self.driver.execute_script("arguments[0].click();", element)
-                return True
-            except Exception as e:  # noqa
-                return False
+
+        with contextlib.suppress(Exception):
+            self.driver.execute_script(scripts.ELEMENT_CLICK, element)
+            return True
+
+        return False
 
     @staticmethod
-    def element_source(element: webelement):
+    def element_source(element: webelement.WebElement):
         return element.get_attribute("outerHTML")
 
     @staticmethod
-    def element_location(element: webelement) -> dict:
+    def element_location(element: webelement.WebElement) -> dict:
         return element.location
 
     @staticmethod
-    def element_size(element: webelement) -> dict:
+    def element_size(element: webelement.WebElement) -> dict:
         return element.size
 
     @staticmethod
@@ -276,6 +280,29 @@ class Tab:
         """Wait until the passed element is no longer present on the page"""
         WebDriverWait(self.driver, wait).until(EC.staleness_of(element))
 
+    def wait_for_url(self, url: str, wait: int = 10) -> bool:
+        """Wait until the url is available.
+
+        Note: it does not wait indefinitely for the url to appear,
+        rather waits for the specified maximum time and returns
+        if the url appeared or not.
+        """
+
+        with contextlib.suppress(Exception):
+            WebDriverWait(self.driver, wait).until(EC.url_to_be(url))
+            return True
+
+        return False
+
+    @property
+    def pyquery(self) -> PyQuery:
+        """Use the powerful pyquery on a Tab object.
+
+        http://pyquery.rtfd.org
+        """
+
+        return PyQuery(self.page_html)
+
 
 class TabManager:
     """A manager for multiple tabs associated with a browser"""
@@ -314,7 +341,7 @@ class TabManager:
     def get_blank_tab(self, full_screen) -> Tab:
         """Get a blank tab to work with. Switches to the newly created tab"""
         windows_before = self.driver.current_window_handle
-        self.driver.execute_script("window.open('about:blank');")
+        self.driver.execute_script(scripts.NEW_TAB)
         windows_after = self.driver.window_handles
         new_window = [x for x in windows_after if x != windows_before][-1]
 
@@ -325,7 +352,7 @@ class TabManager:
 
         return new_tab
 
-    def open_new_tab(self, url, wait_sec=30, full_screen: bool = True):
+    def open_new_tab(self, url, wait_sec=30, full_screen: bool = True) -> Tab:
         """Open a new tab with a given URL.
 
         It also waits for a specified number of seconds for the specified tag to appear on the page"""
@@ -340,7 +367,7 @@ class TabManager:
 
         return blank_tab
 
-    def create(self, tab_handle, full_screen):
+    def create(self, tab_handle, full_screen) -> Tab:
         """Create a Tab object"""
 
         tab = Tab(session=self._session, tab_handle=tab_handle, full_screen=full_screen)
@@ -409,3 +436,9 @@ class TabManager:
             return True
 
         return False
+
+    def unmanaged_tabs(self) -> list[Tab]:
+        curr_tabs = set(self._all_tabs)
+        all_open_windows = {self.create(tab_handle=handle) for handle in self._session.window_handles}
+
+        return list(all_open_windows - curr_tabs)

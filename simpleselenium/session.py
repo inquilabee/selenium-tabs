@@ -45,7 +45,7 @@ class Session:
         self.headless = headless
 
         self.full_screen = full_screen
-        self._driver: webdriver = self._get_driver()
+        self._driver: webdriver.Chrome | webdriver.Firefox = self._get_driver()
 
         # self.full_screen and self.fullscreen_window()
         self.full_screen and self.maximise_window()
@@ -54,7 +54,7 @@ class Session:
     def driver(self):
         return self._driver
 
-    def _get_driver(self) -> webdriver:
+    def _get_driver(self) -> webdriver.Chrome | webdriver.Firefox:
         """returns the driver/browser instance based on set variables and arguments"""
 
         driver_options = self._get_driver_options()
@@ -62,9 +62,7 @@ class Session:
         driver_service = self.BROWSER_DRIVER_SERVICE_FUNCTION[self.browser]
         driver_manager = self.BROWSER_DRIVER_MANAGER_FUNCTION[self.browser]
 
-        driver: webdriver = driver_func(
-            options=driver_options, service=driver_service(executable_path=driver_manager().install())
-        )
+        driver = driver_func(options=driver_options, service=driver_service(executable_path=driver_manager().install()))
 
         driver.implicitly_wait(self.implicit_wait)
 
