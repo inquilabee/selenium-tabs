@@ -1,9 +1,11 @@
 import contextlib
+import random
 import time
 from collections import OrderedDict
 
 from pyquery import PyQuery
 from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.remote import webelement
@@ -143,16 +145,63 @@ class Tab:
         self.driver.get(url)
         return self
 
-    def click(self, element) -> bool:
+    def click(self, element: webelement.WebElement) -> bool:
         """Click a given element on the page represented by the tab"""
+
+        with contextlib.suppress(Exception):
+            return self._click_on_random_position(element)
+
+        with contextlib.suppress(Exception):
+            self.driver.execute_script(scripts.ELEMENT_CLICK, element)
+            return True
 
         with contextlib.suppress(Exception):
             self.switch()
             element.click()
             return True
 
+        return False
+
+    def _click_on_random_position(self, element):
+        """Given an element, click at the random position of the element instead of the
+        exact centre of the element.
+
+        Code Adapted from: https://pylessons.com/Selenium-with-python-click-as-human
+        """
+
+        self.switch()
+
+        height = random.randint(1, element.size["height"])
+        width = random.randint(1, element.size["width"])
+
+        action = ActionChains(self.driver)
+
+        action.move_to_element_with_offset(element, width, height)
+        action.click()
+        action.perform()
+
+        return True
+
+    def empty_click(self) -> bool:
+        """Simulates empty click on the webpage.
+
+        SO: https://stackoverflow.com/questions/27966080/how-to-simulate-mouse-click-on-blank-area
+        """
+
         with contextlib.suppress(Exception):
-            self.driver.execute_script(scripts.ELEMENT_CLICK, element)
+            self.driver.find_element(by=By.XPATH, value=r"//body").click()
+            return True
+
+        with contextlib.suppress(Exception):
+            action = ActionChains(self.driver)
+
+            action.move_by_offset(0, 0)
+            action.click()
+            action.perform()
+            return True
+
+        with contextlib.suppress(Exception):
+            self.driver.find_element(by=By.XPATH, value=r"//html").click()
             return True
 
         return False

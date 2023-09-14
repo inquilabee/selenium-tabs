@@ -22,7 +22,7 @@ class BrowserJQuery:
         return self.find(*args, **kwargs)
 
     def ensure_jquery(self):
-        return not self.is_jquery_injected and self.inject_jquery()
+        not self.is_jquery_injected and self.inject_jquery()
 
     def execute(self, script, *args):
         """Run JavaScript on the page"""
