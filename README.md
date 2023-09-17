@@ -75,7 +75,7 @@ with Browser(name="Chrome", implicit_wait=10) as browser:
     print(browser.tabs)
     print(browser.current_tab)
 
-    # Selecting elements with JQuery
+    # Selecting elements with JQuery (using Browserjquery package)
     print(yahoo.jq("a"))
 
     # Selecting using CSS Selectors (no JQuery needed)
@@ -90,11 +90,11 @@ with Browser(name="Chrome", implicit_wait=10) as browser:
 
     # Closing a tab
     browser.close_tab(bing)
-    
+
     # Switching to a tab
     yahoo.switch()
     google.switch()
-    
+
     # Accessing the driver object
     print(google.driver.title, google.title)
 ```

@@ -29,7 +29,7 @@ skip_glob = []
 
 [tool.poetry]
 name = "simpleselenium"
-version = "0.4.3"
+version = "0.4.4"
 packages = [
     { include = "simpleselenium" },
 ]
@@ -52,6 +52,7 @@ python-dotenv = "^1.0.0"
 PyYAML = "^6.0.1"
 webdriver-manager = "4.0.0"
 pyquery = "^2.0.0"
+browserjquery = "^0.1.0"
 
 
 [tool.poetry.dev-dependencies]

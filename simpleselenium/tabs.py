@@ -3,6 +3,7 @@ import random
 import time
 from collections import OrderedDict
 
+from browserjquery import BrowserJQuery
 from pyquery import PyQuery
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -15,7 +16,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from simpleselenium import settings
 from simpleselenium.element_selectors import SelectableCSS
 from simpleselenium.exceptions import SeleniumRequestException
-from simpleselenium.externals.jquery import BrowserJQuery
 from simpleselenium.js_scripts import scripts
 from simpleselenium.session import Session
 
