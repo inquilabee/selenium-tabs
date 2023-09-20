@@ -1,18 +1,18 @@
-# Simple Selenium: Enhanced Tab Management for Selenium
+# Selenium Tabs: Enhanced Tab Management for Selenium
 
-Simplify your web automation tasks with **Simple Selenium**, a Python package that takes Selenium to the next level with streamlined tab management and additional features.
+Simplify your web automation tasks with **Selenium Tabs**, a Python package that takes Selenium to the next level with streamlined tab management and additional features.
 
 ### Installation
 
-Install **Simple Selenium** from PyPI with ease:
+Install **Selenium Tabs** from PyPI with ease:
 
 ```bash
-pip install selenium-tabs
+pip install seleniumtabs
 ```
 
 ### Core Idea
 
-In **Simple Selenium**, a `browser` contains multiple `tabs`, enabling you to interact with web pages more efficiently. You can perform various actions on both `Tab` and `Browser` objects, making web automation a breeze.
+In **Selenium Tabs**, a `browser` contains multiple `tabs`, enabling you to interact with web pages more efficiently. You can perform various actions on both `Tab` and `Browser` objects, making web automation a breeze.
 
 **Actions/Activities on `Tab` Objects:**
 - Check tab status (open/closed)
@@ -31,11 +31,13 @@ In **Simple Selenium**, a `browser` contains multiple `tabs`, enabling you to in
 
 ### Working with Driver Objects
 
-A `driver` object is available on any `Tab` object, allowing you to access the browser/driver object and use Selenium methods when needed.
+A `driver` object is available on any `Tab` object,
+allowing you to access the browser/driver object
+and use Selenium methods when needed without making explicit switches to a specific tab.
 
 ### Features
 
-**Simple Selenium** offers a range of features to enhance your web automation tasks:
+**Selenium Tabs** offers a range of features to enhance your web automation tasks:
 - Effortless tab management
 - Seamless tab switching
 - Real-time tab status tracking
@@ -45,7 +47,7 @@ A `driver` object is available on any `Tab` object, allowing you to access the b
 
 ### Usage
 
-To get started with **Simple Selenium**, create a `Browser` object and open tabs using the `open` method:
+To get started with **Selenium Tabs**, create a `Browser` object and open tabs using the `open` method:
 
 #### Browser
 
@@ -65,17 +67,13 @@ with Browser(name="Chrome", implicit_wait=10) as browser:
     yahoo.scroll_to_bottom()
 
     # Working with tabs
-    assert len(browser.tabs) == 4
-    assert google in browser.tabs
-    assert browser.tabs[0] == google
-
     for tab in browser.tabs:
         print(tab)
 
     print(browser.tabs)
     print(browser.current_tab)
 
-    # Selecting elements with JQuery (using Browserjquery package)
+    # Selecting elements with JQuery (using browserjquery package)
     print(yahoo.jq("a"))
 
     # Selecting using CSS Selectors (no JQuery needed)
