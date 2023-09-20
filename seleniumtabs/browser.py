@@ -1,8 +1,8 @@
 import time
 
-from simpleselenium.exceptions import SeleniumRequestException
-from simpleselenium.session import Session
-from simpleselenium.tabs import Tab, TabManager
+from seleniumtabs.exceptions import SeleniumRequestException
+from seleniumtabs.session import Session
+from seleniumtabs.tabs import Tab, TabManager
 
 
 class Browser:

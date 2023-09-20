@@ -13,11 +13,11 @@ from selenium.webdriver.remote import webelement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from simpleselenium import settings
-from simpleselenium.element_selectors import SelectableCSS
-from simpleselenium.exceptions import SeleniumRequestException
-from simpleselenium.js_scripts import scripts
-from simpleselenium.session import Session
+from seleniumtabs import settings
+from seleniumtabs.element_selectors import SelectableCSS
+from seleniumtabs.exceptions import SeleniumRequestException
+from seleniumtabs.js_scripts import scripts
+from seleniumtabs.session import Session
 
 logger = settings.getLogger(__name__)
 

@@ -1,5 +1,5 @@
-from simpleselenium import settings
-from simpleselenium.browser import Browser
+from seleniumtabs import settings
+from seleniumtabs.browser import Browser
 
 logger = settings.getLogger(__name__)
 
@@ -9,7 +9,7 @@ logger.info("Yahoo Test Starts")
 def test_run_yahoo():
     err_msg = "Something went wrong. Report immediately."
 
-    with Browser(name="Chrome", implicit_wait=10, headless=False) as browser:
+    with Browser(name="Chrome", implicit_wait=10, headless=True) as browser:
         logger.info("Test Starts")
         yahoo_url = "https://www.yahoo.com/"
         yahoo = browser.open(yahoo_url)

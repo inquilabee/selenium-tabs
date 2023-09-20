@@ -28,18 +28,18 @@ skip = []
 skip_glob = []
 
 [tool.poetry]
-name = "simpleselenium"
+name = "seleniumtabs"
 version = "0.4.4"
 packages = [
-    { include = "simpleselenium" },
+    { include = "seleniumtabs" },
 ]
-description = "Python package to easily work with Selenium."
+description = "Selenium with tab management in Python"
 authors = ["Vishal Kumar Mishra <vishal.k.mishra2@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/TheConfused/simpleselenium"
-repository = "https://github.com/TheConfused/simpleselenium"
-keywords = ["selenium", "selenium python", "selenium python automation", "python automation"]
+homepage = "https://github.com/TheConfused/selenium-tabs"
+repository = "https://github.com/TheConfused/selenium-tabs"
+keywords = ["selenium tabs", "selenium python", "selenium python automation", "python automation", ]
 include = [
     "LICENSE",
 ]

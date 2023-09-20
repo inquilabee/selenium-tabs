@@ -1,5 +1,5 @@
-from simpleselenium import settings
-from simpleselenium.browser import Browser
+from seleniumtabs import settings
+from seleniumtabs.browser import Browser
 
 logger = settings.getLogger(__name__)
 

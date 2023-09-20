@@ -7,7 +7,7 @@ Simplify your web automation tasks with **Simple Selenium**, a Python package th
 Install **Simple Selenium** from PyPI with ease:
 
 ```bash
-pip install simpleselenium
+pip install selenium-tabs
 ```
 
 ### Core Idea
@@ -50,7 +50,7 @@ To get started with **Simple Selenium**, create a `Browser` object and open tabs
 #### Browser
 
 ```python
-from simpleselenium import Browser, Tab
+from seleniumtabs import Browser, Tab
 
 # Create a `Browser` object, specifying the browser name (e.g., "Chrome").
 # The project automatically downloads drivers.
