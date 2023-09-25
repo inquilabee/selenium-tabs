@@ -6,6 +6,11 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager as FireFoxDriverManager
 
+from seleniumtabs import settings
+from seleniumtabs.js_scripts import scripts
+
+logger = settings.getLogger(__name__)
+
 
 class Session:
     """A top level class to manage a browser containing one/more Tabs"""
@@ -62,7 +67,9 @@ class Session:
         driver_service = self.BROWSER_DRIVER_SERVICE_FUNCTION[self.browser]
         driver_manager = self.BROWSER_DRIVER_MANAGER_FUNCTION[self.browser]
 
-        driver = driver_func(options=driver_options, service=driver_service(executable_path=driver_manager().install()))
+        driver: webdriver.Firefox | webdriver.Chrome = driver_func(
+            options=driver_options, service=driver_service(executable_path=driver_manager().install())
+        )
 
         driver.implicitly_wait(self.implicit_wait)
 
@@ -81,7 +88,29 @@ class Session:
         driver_options.add_argument("no-default-browser-check")
         driver_options.add_argument("start-maximized")
 
+        return self.disable_automation_detection(driver_options)
+
+    @staticmethod
+    def disable_automation_detection(driver_options):
+        """Disables automation detection (well, it tries).
+
+        Alternate Solution: Undetected Chromedriver (https://github.com/ultrafunkamsterdam/undetected-chromedriver)
+        Also see: https://stackoverflow.com/a/59367912/8414030 ("you want to return undefined, false is dead giveaway")
+        """
+
+        driver_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        driver_options.add_experimental_option("useAutomationExtension", False)
+        driver_options.add_argument("--disable-blink-features")
+        driver_options.add_argument("--disable-blink-features=AutomationControlled")
+
         return driver_options
+
+    def check_automation_detection(self) -> bool:
+        """Checks if websites can detect automation.
+
+        Alternative: driver.execute_script(scripts.WEBDRIVER_AUTOMATION)
+        """
+        return self.driver.execute_script(scripts.AUTOMATION_DETECTION)
 
     @property
     def current_window_handle(self):

@@ -18,3 +18,11 @@ SCROLL_TO_HEIGHT = "window.scrollTo(0, {new_height});"
 SCROLL_TO_WINDOW_HEIGHT = "window.scrollTo(0, arguments[0]);"
 
 USER_AGENT = "return window.navigator.userAgent"
+
+AUTOMATION_DETECTION = "return navigator.webdriver"
+
+DISABLE_AUTOMATION_WEBDRIVER = """
+Object.defineProperty(navigator, 'webdriver', {
+      get: () => undefined
+    })
+"""

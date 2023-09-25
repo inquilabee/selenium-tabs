@@ -352,6 +352,15 @@ class Tab:
 
         return PyQuery(self.page_html)
 
+    @property
+    def pq(self) -> PyQuery:
+        """Use the powerful pyquery on a Tab object.
+
+        http://pyquery.rtfd.org
+        """
+
+        return self.pyquery
+
 
 class TabManager:
     """A manager for multiple tabs associated with a browser"""
