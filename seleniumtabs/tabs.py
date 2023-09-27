@@ -171,11 +171,12 @@ class Tab:
 
         self.switch()
 
-        height = random.randint(1, element.size["height"])
-        width = random.randint(1, element.size["width"])
+        height = random.randint(1, element.size["height"] // 2)
+        width = random.randint(1, element.size["width"] // 2)
 
         action = ActionChains(self.driver)
 
+        # offsets are measured from the centre of the element
         action.move_to_element_with_offset(element, width, height)
         action.click()
         action.perform()
