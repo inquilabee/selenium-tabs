@@ -1,3 +1,4 @@
+from fake_useragent import UserAgent
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.chrome.service import Service as ChromeService
@@ -30,6 +31,11 @@ class Session:
         "FireFox": FireFoxDriverManager,
     }
 
+    USER_AGENT_FUNCTIONS = {
+        "Chrome": UserAgent(browsers=["chrome"]),
+        "FireFox": UserAgent(browsers=["firefox"]),
+    }
+
     BROWSER_OPTION_FUNCTION = {"Chrome": ChromeOptions, "FireFox": FirefoxOptions}
 
     def __init__(
@@ -46,7 +52,7 @@ class Session:
         self.implicit_wait = implicit_wait
         self.page_load_timeout = page_load_timeout
 
-        self.user_agent = user_agent
+        self.user_agent = user_agent or self.USER_AGENT_FUNCTIONS[self.browser].random
         self.headless = headless
 
         self.full_screen = full_screen
@@ -87,6 +93,7 @@ class Session:
         driver_options.add_argument("--no-sandbox")
         driver_options.add_argument("no-default-browser-check")
         driver_options.add_argument("start-maximized")
+        driver_options.add_argument(f"user-agent={self.user_agent}")
 
         return self.disable_automation_detection(driver_options)
 

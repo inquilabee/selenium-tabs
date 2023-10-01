@@ -44,6 +44,8 @@ and use Selenium methods when needed without making explicit switches to a speci
 - Convenient tab closure
 - Built-in functions for scrolling, clicking, and more
 - Access to the underlying Selenium `driver` object for advanced usage
+- Automatic User agent selection based on set browser
+- Basic steps to avoid getting flagged as automation script by wesbites
 
 ### Usage
 

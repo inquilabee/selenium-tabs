@@ -2,6 +2,7 @@ selenium==4.12.0
 webdriver-manager==4.0.0
 pyquery==2.0.0
 browserjquery
+fake-useragent
 
 django-environ
 python-dotenv
