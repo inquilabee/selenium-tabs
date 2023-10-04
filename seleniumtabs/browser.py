@@ -1,5 +1,6 @@
-from browser_management import browser_sessions
+from selenium import webdriver
 
+from seleniumtabs.browser_management import browser_sessions
 from seleniumtabs.exceptions import SeleniumRequestException
 from seleniumtabs.session import Session
 from seleniumtabs.tabs import Tab, TabManager
@@ -65,8 +66,11 @@ class Browser:
 
         return self._tabs.unmanaged_tabs()
 
-    def open(self, url: str = None) -> Tab:
-        """Starts a new tab with the given url at the end of the list of tabs."""
+    def open(self, url: str = None) -> Tab | webdriver.Chrome | webdriver.Firefox:
+        """Starts a new tab with the given url at the end of the list of tabs.
+
+        The returned value can be treated as a Tab object and/or a webdriver object (see: Tab.__getattribute__).
+        """
 
         self._tabs.switch_to_last_tab()
         curr_tab = self._tabs.open_new_tab(url, full_screen=self.full_screen)
@@ -115,7 +119,7 @@ if __name__ == "__main__":
     err_msg = "Something went wrong. Report!"
 
     with Browser(name="Chrome", implicit_wait=10) as browser:
-        google: Tab = browser.open("https://google.com")
+        google = browser.open("https://google.com")
         yahoo = browser.open("https://yahoo.com")
         bing = browser.open("https://bing.com")
         duck_duck = browser.open("https://duckduckgo.com/")
@@ -230,6 +234,7 @@ if __name__ == "__main__":
         assert google.driver.title == google.title, err_msg  # noqa
 
         print(google.current_window_handle, google.tab_handle)
+        google.refresh()
 
         # Query using the powerful pyquery library
         d = google.pyquery  # noqa

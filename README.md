@@ -65,7 +65,7 @@ from seleniumtabs import Browser, Tab
 
 
 with Browser(name="Chrome", implicit_wait=10) as browser:
-    google: Tab = browser.open("https://google.com")
+    google = browser.open("https://google.com")
     yahoo = browser.open("https://yahoo.com")
     bing = browser.open("https://bing.com")
     duck_duck = browser.open("https://duckduckgo.com/")
@@ -106,6 +106,7 @@ with Browser(name="Chrome", implicit_wait=10) as browser:
 
     # Directly access driver methods and attributes
     print(google.current_window_handle, google.tab_handle)
+    google.refresh()
 
     # PyQuery
     print(google.pyquery.text())
