@@ -3,6 +3,7 @@ import random
 import time
 from collections import OrderedDict
 
+from browser_management import browser_sessions
 from browserjquery import BrowserJQuery
 from pyquery import PyQuery
 from selenium import webdriver
@@ -59,10 +60,10 @@ class Tab:
     __repr__ = __str__
 
     def __del__(self):
-        pass
+        self.close()
 
     def __hash__(self):
-        return self.tab_handle
+        return hash(self.tab_handle)
 
     def __eq__(self, other: "Tab"):
         return self.tab_handle == other.tab_handle
@@ -144,6 +145,9 @@ class Tab:
 
         self.driver.get(url)
         return self
+
+    def close(self):
+        browser_sessions.close_tab(self)
 
     def click(self, element: webelement.WebElement) -> bool:
         """Click a given element on the page represented by the tab"""

@@ -1,8 +1,9 @@
-import time
+from browser_management import browser_sessions
 
 from seleniumtabs.exceptions import SeleniumRequestException
 from seleniumtabs.session import Session
 from seleniumtabs.tabs import Tab, TabManager
+from seleniumtabs.wait import humanized_wait
 
 
 class Browser:
@@ -32,6 +33,8 @@ class Browser:
         )
         self._tabs = TabManager(self._session)
         self.full_screen = full_screen
+
+        browser_sessions.add_browser(self)
 
     def __enter__(self):
         return self
@@ -75,7 +78,7 @@ class Browser:
         if self._tabs.exist(tab):
             tab.switch()
             self._remove_tab(tab=tab)
-            time.sleep(1)
+            humanized_wait(1)
             self._tabs.switch_to_last_tab()
             return True
         else:
@@ -83,8 +86,12 @@ class Browser:
 
     def close(self):
         """Close browser"""
+        humanized_wait(1)
         self._tabs = {}
         self._session.close()
+
+    def __contains__(self, item: Tab):
+        return item in self.tabs
 
     def _remove_tab(self, tab: Tab):
         """For Internal Use Only: Closes a given tab.
@@ -181,7 +188,8 @@ if __name__ == "__main__":
 
         # Closing a tab
 
-        browser.close_tab(bing)
+        # browser.close_tab(bing)
+        bing.close()
         print(browser.tabs)
 
         assert bing.is_alive is False, err_msg  # noqa
@@ -209,7 +217,7 @@ if __name__ == "__main__":
         print(browser.current_tab)
         assert google == browser.current_tab, err_msg  # noqa
 
-        browser.close_tab(yahoo)
+        yahoo.close()
 
         print(yahoo.is_alive)
         print(yahoo.is_active)
@@ -224,4 +232,4 @@ if __name__ == "__main__":
 
         # Query using the powerful pyquery library
 
-        d = yahoo.pyquery  # noqa
+        d = google.pyquery  # noqa

@@ -17,9 +17,10 @@ In **Selenium Tabs**, a `browser` contains multiple `tabs`, enabling you to inte
 **Actions/Activities on `Tab` Objects:**
 - Check tab status (open/closed)
 - Switch to a specific tab
+- Close a tab
 - Access page source, title, and headings
-- Inject jQuery and select elements
-- Perform actions on a specific tab (e.g., click, scroll)
+- Select elements and perform actions using Jquery
+- Perform actions on a specific tab (e.g., click, scroll, close)
 - CSS selection made easy
 
 **Actions/Activities on `Browser` Objects:**
@@ -42,10 +43,12 @@ and use Selenium methods when needed without making explicit switches to a speci
 - Seamless tab switching
 - Real-time tab status tracking
 - Convenient tab closure
-- Built-in functions for scrolling, clicking, and more
+- Built-in functions for scrolling, clicking, waiting for conditions, finding and more
 - Access to the underlying Selenium `driver` object for advanced usage
 - Automatic User agent selection based on set browser
-- Basic steps to avoid getting flagged as automation script by wesbites
+- Basic steps to avoid getting flagged as an automation script by websites
+- Use the all-powerful `pyquery` object access on each tab
+- Execute jquery functions using `.jq` or `.jquery` attributes
 
 ### Usage
 
@@ -53,11 +56,12 @@ To get started with **Selenium Tabs**, create a `Browser` object and open tabs u
 
 #### Browser
 
+Create a `Browser` object, specifying the browser name (e.g. "Chrome" or "FireFox").
+The project automatically downloads drivers.
+
 ```python
 from seleniumtabs import Browser, Tab
 
-# Create a `Browser` object, specifying the browser name (e.g., "Chrome").
-# The project automatically downloads drivers.
 
 with Browser(name="Chrome", implicit_wait=10) as browser:
     google: Tab = browser.open("https://google.com")
@@ -66,6 +70,7 @@ with Browser(name="Chrome", implicit_wait=10) as browser:
     duck_duck = browser.open("https://duckduckgo.com/")
 
     # Scroll on the page (example)
+    yahoo.scroll(times=2)
     yahoo.scroll_to_bottom()
 
     # Working with tabs
@@ -89,14 +94,18 @@ with Browser(name="Chrome", implicit_wait=10) as browser:
     print(google.page_source)
 
     # Closing a tab
-    browser.close_tab(bing)
+    bing.close() # Or browser.close_tab(bing)
 
     # Switching to a tab
     yahoo.switch()
     google.switch()
 
     # Accessing the driver object
-    print(google.driver.title, google.title)
+    print(google.driver.title, google.title) # Should output same value
+
+    # PyQuery
+    print(google.pyquery.text())
+    print(google.pq.size())
 ```
 
 ### TODO
