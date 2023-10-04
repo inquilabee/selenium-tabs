@@ -3,7 +3,6 @@ import random
 import time
 from collections import OrderedDict
 
-from browser_management import browser_sessions
 from browserjquery import BrowserJQuery
 from pyquery import PyQuery
 from selenium import webdriver
@@ -15,6 +14,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from seleniumtabs import settings
+from seleniumtabs.browser_management import browser_sessions
 from seleniumtabs.element_selectors import SelectableCSS
 from seleniumtabs.exceptions import SeleniumOpenTabException, SeleniumRequestException
 from seleniumtabs.js_scripts import scripts
