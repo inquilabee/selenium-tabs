@@ -16,7 +16,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from seleniumtabs import settings
 from seleniumtabs.element_selectors import SelectableCSS
-from seleniumtabs.exceptions import SeleniumRequestException
+from seleniumtabs.exceptions import SeleniumOpenTabException, SeleniumRequestException
 from seleniumtabs.js_scripts import scripts
 from seleniumtabs.session import Session
 
@@ -58,6 +58,12 @@ class Tab:
         )
 
     __repr__ = __str__
+
+    def __getattribute__(self, item):
+        with contextlib.suppress(Exception):
+            return super().__getattribute__(item)
+
+        return getattr(self.driver, item)
 
     def __del__(self):
         self.close()
@@ -143,8 +149,17 @@ class Tab:
     def open(self, url):
         """Open an url in the tab"""
 
-        self.driver.get(url)
-        return self
+        with contextlib.suppress(Exception):
+            self.driver.get(url)
+            return self
+
+        self.driver.execute_script(scripts.STOP_PAGE_LOADING)
+
+        if url in self.url or self.url in url:
+            logger.info(f"Page partially loaded: {self.url}")
+            return self
+
+        raise SeleniumOpenTabException("Could not open a new tab.")
 
     def close(self):
         browser_sessions.close_tab(self)

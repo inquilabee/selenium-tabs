@@ -13,7 +13,7 @@ class SelectableCSS:
 
     def css(self, selector: str) -> list[webelement.WebElement | str]:
         return [
-            SelectableCSS(ele) if isinstance(ele, webelement.WebElement) else ele
+            SelectableCSS(ele) if ele and isinstance(ele, webelement.WebElement) else ele
             for ele in self.ele.find_elements(by=By.CSS_SELECTOR, value=selector)
         ]
 

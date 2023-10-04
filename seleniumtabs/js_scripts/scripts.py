@@ -26,3 +26,5 @@ Object.defineProperty(navigator, 'webdriver', {
       get: () => undefined
     })
 """
+
+STOP_PAGE_LOADING = "window.stop();"

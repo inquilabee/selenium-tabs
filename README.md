@@ -45,6 +45,7 @@ and use Selenium methods when needed without making explicit switches to a speci
 - Convenient tab closure
 - Built-in functions for scrolling, clicking, waiting for conditions, finding and more
 - Access to the underlying Selenium `driver` object for advanced usage
+- Access `driver` methods directly on tabs
 - Automatic User agent selection based on set browser
 - Basic steps to avoid getting flagged as an automation script by websites
 - Use the all-powerful `pyquery` object access on each tab
@@ -102,6 +103,9 @@ with Browser(name="Chrome", implicit_wait=10) as browser:
 
     # Accessing the driver object
     print(google.driver.title, google.title) # Should output same value
+
+    # Directly access driver methods and attributes
+    print(google.current_window_handle, google.tab_handle)
 
     # PyQuery
     print(google.pyquery.text())

@@ -226,10 +226,10 @@ if __name__ == "__main__":
         assert yahoo.is_alive is False, err_msg  # noqa
 
         # Accessing the driver object
-
         print(google.driver.title, google.title)
         assert google.driver.title == google.title, err_msg  # noqa
 
-        # Query using the powerful pyquery library
+        print(google.current_window_handle, google.tab_handle)
 
+        # Query using the powerful pyquery library
         d = google.pyquery  # noqa

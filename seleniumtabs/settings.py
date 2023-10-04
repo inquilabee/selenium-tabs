@@ -45,9 +45,3 @@ env.read_env(env_file=env_file)
 # ============================
 
 # ENV_VAR = env("ENV_VAR")
-
-# ============================
-# JQUERY INJECTION FILE
-# ============================
-
-JQUERY_INJECTION_FILE = BASE_DIR / "data" / "jquery.js"
