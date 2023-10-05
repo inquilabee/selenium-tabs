@@ -66,14 +66,14 @@ class Browser:
 
         return self._tabs.unmanaged_tabs()
 
-    def open(self, url: str = None) -> Tab | webdriver.Chrome | webdriver.Firefox:
+    def open(self, url: str = "data:,", **kwargs) -> Tab | webdriver.Chrome | webdriver.Firefox:
         """Starts a new tab with the given url at the end of the list of tabs.
 
         The returned value can be treated as a Tab object and/or a webdriver object (see: Tab.__getattribute__).
         """
 
         self._tabs.switch_to_last_tab()
-        curr_tab = self._tabs.open_new_tab(url, full_screen=self.full_screen)
+        curr_tab = self._tabs.open_new_tab(url, full_screen=self.full_screen, **kwargs)
         curr_tab.switch()
         return curr_tab
 

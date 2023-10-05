@@ -28,3 +28,5 @@ Object.defineProperty(navigator, 'webdriver', {
 """
 
 STOP_PAGE_LOADING = "window.stop();"
+
+PAGE_LOAD_CHECK = "return document.readyState;"

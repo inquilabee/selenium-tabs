@@ -54,6 +54,7 @@ webdriver-manager = "4.0.0"
 pyquery = "^2.0.0"
 browserjquery = "^0.1.0"
 fake-useragent = "^1.2.1"
+tldextract = "^3.6.0"
 
 
 [tool.poetry.dev-dependencies]

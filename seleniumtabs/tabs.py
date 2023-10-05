@@ -2,6 +2,7 @@ import contextlib
 import random
 import time
 from collections import OrderedDict
+from threading import Lock
 
 from browserjquery import BrowserJQuery
 from pyquery import PyQuery
@@ -19,8 +20,12 @@ from seleniumtabs.element_selectors import SelectableCSS
 from seleniumtabs.exceptions import SeleniumOpenTabException, SeleniumRequestException
 from seleniumtabs.js_scripts import scripts
 from seleniumtabs.session import Session
+from seleniumtabs.utils.urls import get_domain
+from seleniumtabs.wait import humanized_wait
 
 logger = settings.getLogger(__name__)
+
+lock = Lock()
 
 
 class Tab:
@@ -110,8 +115,36 @@ class Tab:
 
     @property
     def url(self) -> str:
-        """Returns the title of the page at the moment"""
+        """Returns the url of the page at the moment"""
         return self.driver.current_url
+
+    @property
+    def domain(self) -> str:
+        """Returns the domain of the page url at the moment"""
+        return get_domain(self.driver.current_url)
+
+    def has_page_loaded(self) -> bool:
+        """Check if the page has finished loading.
+
+        Reference: https://stackoverflow.com/questions/26566799/wait-until-page-is-loaded-with-selenium-webdriver-for-python
+        """
+        page_state = self.driver.execute_script(scripts.PAGE_LOAD_CHECK)
+        return page_state == "complete"
+
+    def wait_for_loading(self, max_wait: int | float = 5, check_duration: int | float = 0.5) -> bool:
+        """Wait until the page has finished loading.
+
+        Reference: https://stackoverflow.com/questions/26566799/wait-until-page-is-loaded-with-selenium-webdriver-for-python
+        """
+        start = time.perf_counter()
+
+        ready = "nope"
+
+        while ready != "complete" and time.perf_counter() - start < max_wait:
+            ready = self.driver.execute_script(scripts.PAGE_LOAD_CHECK)
+            time.sleep(check_duration)
+
+        return ready == "complete"
 
     @property
     def page_source(self) -> str:
@@ -146,18 +179,22 @@ class Tab:
 
         return True
 
-    def open(self, url):
+    def open(self, url, partial_load: bool = True, wait: int | float = 1, wait_for_redirect: int | float = 1):
         """Open an url in the tab"""
 
         with contextlib.suppress(Exception):
             self.driver.get(url)
+            wait and humanized_wait(wait)  # minimum wait
+            wait_for_redirect and self.wait_for_loading(wait_for_redirect)
             return self
 
-        self.driver.execute_script(scripts.STOP_PAGE_LOADING)
+        if partial_load:
+            self.driver.execute_script(scripts.STOP_PAGE_LOADING)
+            time.sleep(1)
 
-        if url in self.url or self.url in url:
-            logger.info(f"Page partially loaded: {self.url}")
-            return self
+            if url in self.domain or self.domain in url:
+                logger.info(f"Page partially loaded: {self.url}")
+                return self
 
         raise SeleniumOpenTabException("Could not open a new tab.")
 
@@ -418,19 +455,24 @@ class TabManager:
 
     def get_blank_tab(self, full_screen) -> Tab:
         """Get a blank tab to work with. Switches to the newly created tab"""
-        windows_before = self.driver.current_window_handle
-        self.driver.execute_script(scripts.NEW_TAB)
-        windows_after = self.driver.window_handles
-        new_window = [x for x in windows_after if x != windows_before][-1]
 
-        self.driver.switch_to.window(new_window)
+        with lock:
+            windows_before = set(self.driver.window_handles)
+            self.driver.execute_script(scripts.NEW_TAB)
 
-        new_tab = self.create(new_window, full_screen)
-        new_tab.switch()
+            if not (new_window := set(self.driver.window_handles) - windows_before):
+                raise SeleniumOpenTabException("Could not open new tab. Error in getting a blank tab.")
 
-        return new_tab
+            new_window = list(new_window)[0]
 
-    def open_new_tab(self, url, wait_sec=30, full_screen: bool = True) -> Tab:
+            self.driver.switch_to.window(new_window)
+
+            new_tab = self.create(new_window, full_screen)
+            new_tab.switch()
+
+            return new_tab
+
+    def open_new_tab(self, url, wait_sec=30, full_screen: bool = True, **op_kw) -> Tab:
         """Open a new tab with a given URL.
 
         It also waits for a specified number of seconds for the specified tag to appear on the page"""
@@ -439,7 +481,7 @@ class TabManager:
         blank_tab.start_url = url
 
         blank_tab.switch()
-        blank_tab.open(url)
+        blank_tab.open(url, **op_kw)
 
         blank_tab.wait_for_body_tag_presence_and_visibility(wait=wait_sec)
 
