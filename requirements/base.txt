@@ -3,6 +3,7 @@ webdriver-manager==4.0.0
 pyquery==2.0.0
 browserjquery
 fake-useragent
+tldextract
 
 django-environ
 python-dotenv

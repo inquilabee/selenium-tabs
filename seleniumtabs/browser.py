@@ -63,7 +63,6 @@ class Browser:
 
     def unmanaged_tabs(self) -> list[Tab]:
         """Tabs which have not been created using `Browser.open()` method."""
-
         return self._tabs.unmanaged_tabs()
 
     def open(self, url: str = "data:,", **kwargs) -> Tab | webdriver.Chrome | webdriver.Firefox:
@@ -124,6 +123,8 @@ if __name__ == "__main__":
         bing = browser.open("https://bing.com")
         duck_duck = browser.open("https://duckduckgo.com/")
 
+        print(browser.unmanaged_tabs())
+
         # Scroll on the page
 
         # yahoo.scroll_to_bottom()
@@ -133,6 +134,8 @@ if __name__ == "__main__":
 
         # Working with tabs -- loop through it, access using index and so on
 
+        print(len(browser.tabs))
+        print(browser.tabs)
         assert len(browser.tabs) == 4, err_msg  # noqa
         assert google in browser.tabs, err_msg  # noqa
         assert browser.tabs[0] == google, err_msg  # noqa

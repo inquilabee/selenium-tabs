@@ -487,7 +487,7 @@ class TabManager:
 
         return blank_tab
 
-    def create(self, tab_handle, full_screen) -> Tab:
+    def create(self, tab_handle, full_screen: bool = True) -> Tab:
         """Create a Tab object"""
 
         tab = Tab(session=self._session, tab_handle=tab_handle, full_screen=full_screen)
@@ -558,7 +558,17 @@ class TabManager:
         return False
 
     def unmanaged_tabs(self) -> list[Tab]:
+        curr_tab = self.current_tab()
         curr_tabs = set(self._all_tabs)
-        all_open_windows = {self.create(tab_handle=handle) for handle in self._session.window_handles}
+        tabs = [
+            Tab(session=self._session, tab_handle=handle)
+            for handle in self._session.window_handles
+            if handle not in curr_tabs
+        ]
 
-        return list(all_open_windows - curr_tabs)
+        for tab in tabs:
+            tab.start_url = tab.url
+
+        curr_tab.switch()
+
+        return tabs
