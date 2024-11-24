@@ -2,6 +2,7 @@ from selenium import webdriver
 
 from seleniumtabs.browser_management import browser_sessions
 from seleniumtabs.exceptions import SeleniumRequestException
+from seleniumtabs.schedule_tasks import task_scheduler
 from seleniumtabs.session import Session
 from seleniumtabs.tabs import Tab, TabManager
 from seleniumtabs.wait import humanized_wait
@@ -112,6 +113,9 @@ class Browser:
         assert self._tabs.exist(tab) is False  # noqa # nosec
 
         self._tabs and self._tabs.last_tab.switch()
+
+    def execute_task(self, max_time=None):
+        task_scheduler.execute_tasks(max_time)
 
 
 if __name__ == "__main__":

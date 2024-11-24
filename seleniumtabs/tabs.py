@@ -19,6 +19,7 @@ from seleniumtabs.browser_management import browser_sessions
 from seleniumtabs.element_selectors import SelectableCSS
 from seleniumtabs.exceptions import SeleniumOpenTabException, SeleniumRequestException
 from seleniumtabs.js_scripts import scripts
+from seleniumtabs.schedule_tasks import task_scheduler
 from seleniumtabs.session import Session
 from seleniumtabs.utils.urls import get_domain
 from seleniumtabs.wait import humanized_wait
@@ -417,6 +418,9 @@ class Tab:
         """
 
         return self.pyquery
+
+    def schedule_task(self, task, period: int, *args, **kwargs):
+        task_scheduler.schedule_task(self, task, period, *args, **kwargs)
 
 
 class TabManager:

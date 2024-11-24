@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 120
-target-version = ['py311']
+target-version = ['py312']
 include = '\.pyi?$'
 exclude = '''
 /(
@@ -13,6 +13,7 @@ exclude = '''
   |Jenkinfile
   | _build
   | dist
+  | .venv
 )/
 '''
 
@@ -20,32 +21,30 @@ exclude = '''
 [tool.isort]
 profile = "black"
 line_length = 120
-known_first_party = [
-    "config",
-    "apps",
-]
+known_first_party = ["config", "apps"]
 skip = []
 skip_glob = []
 
 [tool.poetry]
 name = "seleniumtabs"
-version = "0.5.7"
-packages = [
-    { include = "seleniumtabs" },
-]
+version = "1.0.0"
+packages = [{ include = "seleniumtabs" }]
 description = "Selenium with tab management in Python"
 authors = ["Vishal Kumar Mishra <vishal.k.mishra2@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/TheConfused/selenium-tabs"
 repository = "https://github.com/TheConfused/selenium-tabs"
-keywords = ["selenium tabs", "selenium python", "selenium python automation", "python automation", ]
-include = [
-    "LICENSE",
+keywords = [
+  "selenium tabs",
+  "selenium python",
+  "selenium python automation",
+  "python automation",
 ]
+include = ["LICENSE"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.13"
 selenium = "^4.12.0"
 django-environ = "^0.11.1"
 python-dotenv = "^1.0.0"
@@ -53,8 +52,9 @@ PyYAML = "^6.0.1"
 pyquery = "^2.0.0"
 browserjquery = "^0.1.0"
 fake-useragent = "^1.2.1"
-tldextract = "^3.6.0"
+tldextract = "^5.1.2"
 webdriver-manager = "^4.0.2"
+schedule = "^1.2.2"
 
 
 [tool.poetry.dev-dependencies]
@@ -75,10 +75,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--ds=settings"
-python_files = [
-    "tests.py",
-    "test_*.py",
-]
+python_files = ["tests.py", "test_*.py"]
 
 # ==== mypy ====
 [tool.mypy]
@@ -96,32 +93,77 @@ select = ["E", "F"]
 ignore = []
 
 # Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
+fixable = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "I",
+  "N",
+  "Q",
+  "S",
+  "T",
+  "W",
+  "ANN",
+  "ARG",
+  "BLE",
+  "COM",
+  "DJ",
+  "DTZ",
+  "EM",
+  "ERA",
+  "EXE",
+  "FBT",
+  "ICN",
+  "INP",
+  "ISC",
+  "NPY",
+  "PD",
+  "PGH",
+  "PIE",
+  "PL",
+  "PT",
+  "PTH",
+  "PYI",
+  "RET",
+  "RSE",
+  "RUF",
+  "SIM",
+  "SLF",
+  "TCH",
+  "TID",
+  "TRY",
+  "UP",
+  "YTT",
+]
 unfixable = []
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
 ]
 
 line-length = 120
