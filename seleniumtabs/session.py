@@ -58,8 +58,8 @@ class Session:
         self.full_screen = full_screen
         self._driver: webdriver.Chrome | webdriver.Firefox = self._get_driver()
 
-        # self.full_screen and self.fullscreen_window()
-        self.full_screen and self.maximise_window()
+        if self.full_screen:
+            self.maximise_window()
 
     @property
     def driver(self):
@@ -79,14 +79,16 @@ class Session:
 
         driver.implicitly_wait(self.implicit_wait)
 
-        self.page_load_timeout and driver.set_page_load_timeout(self.page_load_timeout)
+        if self.page_load_timeout:
+            driver.set_page_load_timeout(self.page_load_timeout)
 
         return driver
 
     def _get_driver_options(self):
         driver_options = self.BROWSER_OPTION_FUNCTION[self.browser]()
 
-        self.headless and driver_options.add_argument("--headless")
+        if self.headless:
+            driver_options.add_argument("--headless")
 
         driver_options.add_argument("--disable-gpu")
         driver_options.add_argument("--disable-extensions")

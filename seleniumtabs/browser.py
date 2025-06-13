@@ -1,5 +1,3 @@
-from selenium import webdriver
-
 from seleniumtabs.browser_management import browser_sessions
 from seleniumtabs.exceptions import SeleniumRequestException
 from seleniumtabs.schedule_tasks import task_scheduler
@@ -11,237 +9,143 @@ from seleniumtabs.wait import humanized_wait
 class Browser:
     """
     A browser containing session and all the available tabs.
+
     Most users will just interact with (objects of) this class.
     """
 
     def __init__(
         self,
-        name,
+        name: str,
         implicit_wait: int = 0,
-        user_agent: str = None,
+        user_agent: str | None = None,
         headless: bool = False,
         full_screen: bool = True,
     ):
         self.name = name
 
-        self.implicit_wait = implicit_wait
-        self.user_agent = user_agent
-
         self._session = Session(
             name,
             headless=headless,
-            implicit_wait=self.implicit_wait,
-            user_agent=self.user_agent,
+            implicit_wait=implicit_wait,
+            user_agent=user_agent,
         )
-        self._tabs = TabManager(self._session)
+        self._manager: TabManager = TabManager(self._session)
+
         self.full_screen = full_screen
 
         browser_sessions.add_browser(self)
 
-    def __enter__(self):
+    def __enter__(self) -> "Browser":
+        """Context manager entry point"""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit point - ensures browser is closed"""
         self.close()
 
     @property
-    def tabs(self) -> list:
-        """Returns all open tabs"""
-        return list(self._tabs)  # noqa
+    def tabs(self) -> list[Tab]:
+        """Returns all open tabs in the browser"""
+        return list(self._manager)
 
     @property
-    def current_tab(self) -> Tab:
-        """get the current tab from the list of the tabs"""
-        return self._tabs.current_tab()
+    def current_tab(self) -> Tab | None:
+        """Get the currently active tab from the list of tabs"""
+        return self._manager.current_tab()
 
     @property
-    def first_tab(self) -> Tab:
-        return self._tabs.first_tab
+    def first_tab(self) -> Tab | None:
+        """Get the first tab from the list of tabs"""
+        return self._manager.first_tab
 
     @property
-    def last_tab(self) -> Tab:
-        return self._tabs.last_tab
+    def last_tab(self) -> Tab | None:
+        """Get the last tab from the list of tabs"""
+        return self._manager.last_tab
 
     def unmanaged_tabs(self) -> list[Tab]:
-        """Tabs which have not been created using `Browser.open()` method."""
-        return self._tabs.unmanaged_tabs()
+        """Get tabs which have not been created using `Browser.open()` method.
 
-    def open(self, url: str = "data:,", **kwargs) -> Tab | webdriver.Chrome | webdriver.Firefox:
-        """Starts a new tab with the given url at the end of the list of tabs.
-
-        The returned value can be treated as a Tab object and/or a webdriver object (see: Tab.__getattribute__).
+        Returns:
+            list[Tab]: List of tabs that are not managed by this browser instance
         """
+        return self._manager.unmanaged_tabs()
 
-        self._tabs.switch_to_last_tab()
-        curr_tab = self._tabs.open_new_tab(url, full_screen=self.full_screen, **kwargs)
+    def open(self, url: str = "data:,", **kwargs) -> Tab:
+        """Start a new tab with the given url at the end of the list of tabs.
+
+        Args:
+            url: The URL to open in the new tab. Defaults to "data:,"
+            **kwargs: Additional arguments to pass to the tab creation
+
+        Returns:
+            Tab: The newly created tab object
+        """
+        self._manager.switch_to_last_tab()
+        curr_tab = self._manager.open_new_tab(url, full_screen=self.full_screen, **kwargs)
         curr_tab.switch()
         return curr_tab
 
-    def close_tab(self, tab: Tab):
-        """Close a given tab"""
-        if self._tabs.exist(tab):
+    def close_tab(self, tab: Tab) -> bool:
+        """Close a given tab.
+
+        Args:
+            tab: The tab to close
+
+        Returns:
+            bool: True if the tab was closed successfully
+
+        Raises:
+            SeleniumRequestException: If the tab does not exist
+        """
+        if self._manager.exist(tab):
             tab.switch()
             self._remove_tab(tab=tab)
             humanized_wait(1)
-            self._tabs.switch_to_last_tab()
+            self._manager.switch_to_last_tab()
             return True
-        else:
-            raise SeleniumRequestException("Tab does not exist.")
 
-    def close(self):
-        """Close browser"""
+        raise SeleniumRequestException("Tab does not exist.")
+
+    def close(self) -> None:
+        """Close the browser and clean up all resources"""
         humanized_wait(1)
-        self._tabs = {}
+        self._manager.clear()
         self._session.close()
 
-    def __contains__(self, item: Tab):
+    def __contains__(self, item: Tab) -> bool:
+        """Check if a tab exists in the browser"""
         return item in self.tabs
 
-    def _remove_tab(self, tab: Tab):
+    def _remove_tab(self, tab: Tab) -> None:
         """For Internal Use Only: Closes a given tab.
 
-        The order of operation is extremely important here. Practice extreme caution while editing this."""
+        The order of operation is extremely important here. Practice extreme caution while editing this.
 
+        Args:
+            tab: The tab to remove
+
+        Note:
+            This method performs several assertions to ensure the tab state is correct
+            before and after removal.
+        """
         assert tab.is_alive is True  # noqa # nosec
-        assert self._tabs.exist(tab) is True  # noqa # nosec
+        assert self._manager.exist(tab) is True  # noqa # nosec
 
         tab.switch()
-        self._tabs.remove(tab)
+        self._manager.remove(tab)
         self._session.close_driver()
 
         assert tab.is_alive is False  # noqa # nosec
-        assert self._tabs.exist(tab) is False  # noqa # nosec
+        assert self._manager.exist(tab) is False  # noqa # nosec
 
-        self._tabs and self._tabs.last_tab.switch()
+        if self._manager and self._manager.last_tab:
+            self._manager.last_tab.switch()
 
-    def execute_task(self, max_time=None):
+    def execute_task(self, max_time: int | None = None) -> None:
+        """Execute scheduled tasks.
+
+        Args:
+            max_time: Maximum time in seconds to execute tasks. If None, no time limit is applied.
+        """
         task_scheduler.execute_tasks(max_time)
-
-
-if __name__ == "__main__":
-    err_msg = "Something went wrong. Report!"
-
-    with Browser(name="Chrome", implicit_wait=10) as browser:
-        google = browser.open("https://google.com")
-        yahoo = browser.open("https://yahoo.com")
-        bing = browser.open("https://bing.com")
-        duck_duck = browser.open("https://duckduckgo.com/")
-
-        print(browser.unmanaged_tabs())
-
-        # Scroll on the page
-
-        # yahoo.scroll_to_bottom()
-        # yahoo.scroll_down(times=2)
-        # yahoo.scroll_up(times=2)
-        # yahoo.scroll(times=2, wait=5)
-
-        # Working with tabs -- loop through it, access using index and so on
-
-        print(len(browser.tabs))
-        print(browser.tabs)
-        assert len(browser.tabs) == 4, err_msg  # noqa
-        assert google in browser.tabs, err_msg  # noqa
-        assert browser.tabs[0] == google, err_msg  # noqa
-
-        for tab in browser.tabs:
-            print(tab)
-
-        print(browser.tabs)
-        print(browser.current_tab)
-
-        # Selecting elements with JQuery
-
-        for item in yahoo.jquery.execute("""return $(".stream-items a");"""):
-            result = yahoo.jquery.query(
-                script="""
-                        return $(arguments[0]).text();
-                    """,
-                element=item,
-            )
-
-            print(result)
-
-        # Selecting using CSS Selectors (no JQuery needed)
-
-        for item in yahoo.css(".stream-items"):
-            for a in item.css("a"):
-                print(a, a.text)
-
-        assert yahoo == browser.current_tab, err_msg  # noqa
-
-        print(browser.first_tab)
-        assert google == browser.first_tab, err_msg  # noqa
-
-        print(browser.last_tab)
-        assert duck_duck == browser.last_tab, err_msg  # noqa
-
-        print(browser.last_tab.switch())
-        assert browser.current_tab == duck_duck, err_msg  # noqa
-
-        # Some `Tab` attributes/properties
-
-        print(google.title)
-        print(google.url)
-
-        print(google.page_source)
-        print(google.page_html)
-
-        print(google.page_height)
-        print(google.user_agent)
-        print(google.is_active)
-        print(google.is_alive)
-
-        assert google.is_active is True, err_msg  # noqa
-        assert google.is_alive is True, err_msg  # noqa
-
-        assert google.is_alive is True, err_msg  # noqa
-
-        # Closing a tab
-
-        # browser.close_tab(bing)
-        bing.close()
-        print(browser.tabs)
-
-        assert bing.is_alive is False, err_msg  # noqa
-        assert bing.is_active is False, err_msg  # noqa
-        assert bing not in browser.tabs, err_msg  # noqa
-
-        print(browser.current_tab)
-        assert duck_duck == browser.current_tab, err_msg  # noqa
-        assert duck_duck.is_alive, err_msg  # noqa
-        assert duck_duck.is_active, err_msg  # noqa
-
-        # Switching to a tab
-
-        yahoo.switch()
-
-        print(browser.current_tab)
-
-        assert yahoo == browser.current_tab, err_msg  # noqa
-        assert yahoo.is_alive, err_msg  # noqa
-        assert yahoo.is_active, err_msg  # noqa
-        assert duck_duck.is_active is False, err_msg  # noqa
-
-        google.switch()
-
-        print(browser.current_tab)
-        assert google == browser.current_tab, err_msg  # noqa
-
-        yahoo.close()
-
-        print(yahoo.is_alive)
-        print(yahoo.is_active)
-
-        assert yahoo.is_active is False, err_msg  # noqa
-        assert yahoo.is_alive is False, err_msg  # noqa
-
-        # Accessing the driver object
-        print(google.driver.title, google.title)
-        assert google.driver.title == google.title, err_msg  # noqa
-
-        print(google.current_window_handle, google.tab_handle)
-        google.refresh()
-
-        # Query using the powerful pyquery library
-        d = google.pyquery  # noqa

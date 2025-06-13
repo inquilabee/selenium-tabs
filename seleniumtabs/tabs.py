@@ -2,7 +2,9 @@ import contextlib
 import random
 import time
 from collections import OrderedDict
+from collections.abc import Iterator
 from threading import Lock
+from typing import Any
 
 from browserjquery import BrowserJQuery
 from pyquery import PyQuery
@@ -16,7 +18,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from seleniumtabs import settings
 from seleniumtabs.browser_management import browser_sessions
-from seleniumtabs.element_selectors import SelectableCSS
+from seleniumtabs.css_selectors import SelectableCSS
 from seleniumtabs.exceptions import SeleniumOpenTabException, SeleniumRequestException
 from seleniumtabs.js_scripts import scripts
 from seleniumtabs.schedule_tasks import task_scheduler
@@ -34,8 +36,8 @@ class Tab:
 
     SCROLL_DIST = 50
 
-    def __init__(self, session, tab_handle, start_url: str = None, full_screen: bool = True):
-        self._session: Session = session
+    def __init__(self, session: Session, tab_handle, start_url: str | None = None, full_screen: bool = True):
+        self._session = session
         self.tab_handle = tab_handle
         self.start_url = start_url
         self.full_screen = full_screen
@@ -77,7 +79,7 @@ class Tab:
     def __hash__(self):
         return hash(self.tab_handle)
 
-    def __eq__(self, other: "Tab"):
+    def __eq__(self, other: "Tab"):  # type: ignore
         return self.tab_handle == other.tab_handle
 
     def maximise(self):
@@ -94,7 +96,7 @@ class Tab:
         return self.jquery
 
     def css(self, css_selector: str) -> list:
-        return SelectableCSS(self.driver).css(css_selector)  # noqa
+        return SelectableCSS(self.driver).css(css_selector)  # type: ignore # noqa
 
     @property
     def is_alive(self):
@@ -180,13 +182,13 @@ class Tab:
 
         return True
 
-    def open(self, url, partial_load: bool = True, wait: int | float = 1, wait_for_redirect: int | float = 1):
+    def open(self, url, partial_load: bool = True, wait: int = 1, wait_for_redirect: int | float = 1):
         """Open an url in the tab"""
 
         with contextlib.suppress(Exception):
             self.driver.get(url)
-            wait and humanized_wait(wait)  # minimum wait
-            wait_for_redirect and self.wait_for_loading(wait_for_redirect)
+            humanized_wait(wait or 0)  # minimum wait
+            self.wait_for_loading(wait_for_redirect)
             return self
 
         if partial_load:
@@ -280,22 +282,24 @@ class Tab:
     def element_center(element):
         pass
 
-    def run_js(self, script, *args):
+    def run_js(self, script: str, *args) -> Any:
         """Run JavaScript on the page"""
         return self.driver.execute_script(script, *args)
 
-    def get_all_attributes_of_element(self, element) -> dict:
+    def get_all_attributes_of_element(self, element: webelement.WebElement) -> dict:
         """Get all attributes of a given element on the tab's page"""
 
         return self.run_js(scripts.ELEMENT_ATTRIBUTES, element)
 
-    def get_attribute(self, element, attr_name):
+    def get_attribute(self, element: webelement.WebElement, attr_name: str) -> Any:
         """Get specific attributes of a given element on the tab's page"""
 
         attr_dict = self.get_all_attributes_of_element(element=element)
         return attr_dict[attr_name]
 
-    def find_element(self, by, value, multiple=False):
+    def find_element(
+        self, by: str, value: str, multiple: bool = False
+    ) -> webelement.WebElement | None | list[webelement.WebElement]:
         """Try to find element given a criteria and the value"""
 
         elements = self.driver.find_elements(by, value)
@@ -310,7 +314,7 @@ class Tab:
         else:
             return None
 
-    def scroll(self, times=1, clicks: int = None, direction: int = 1, wait: int = 3):
+    def scroll(self, times: int = 1, clicks: int | None = None, direction: int = 1, wait: int = 3):
         """Usual scroll"""
         self.switch()
 
@@ -325,24 +329,26 @@ class Tab:
 
             logger.info(f"Updated page height: {self.page_height}")
 
-    def scroll_up(self, times: int = 1, clicks: int = None, wait: int = 3):
+    def scroll_up(self, times: int = 1, clicks: int | None = None, wait: int = 3):
         self.switch()
         self.scroll(clicks=clicks, times=times, direction=-1, wait=wait)
 
-    def scroll_down(self, times: int = 1, clicks: int = None, wait: int = 3):
+    def scroll_down(self, times: int = 1, clicks: int | None = None, wait: int = 3):
         self.switch()
         self.scroll(clicks=clicks, times=times, direction=1, wait=wait)
 
-    def scroll_to_bottom(self, wait: int = None):
+    def scroll_to_bottom(self, wait: int | None = None):
         """Scroll to the bottom of the page"""
 
         self.wait_for_presence_and_visibility(by=By.TAG_NAME, key="html", wait=wait or 5)
         html = self.driver.find_elements(by=By.TAG_NAME, value="html")
-        html and html[0] and html[0].send_keys(Keys.END)
+
+        if html and html[0]:
+            html[0].send_keys(Keys.END)
 
         self.run_js(scripts.SCROLL_TO_WINDOW_HEIGHT, self.page_height)
 
-        wait and time.sleep(wait)
+        time.sleep(wait or 0)
 
     def infinite_scroll(self, retries=5):
         """Infinite (so many times) scroll"""
@@ -424,57 +430,76 @@ class Tab:
 
 
 class TabManager:
-    """A manager for multiple tabs associated with a browser"""
+    """A manager for multiple tabs associated with a browser.
 
-    def __init__(self, session):
+    This class manages the lifecycle and operations of browser tabs, including:
+    - Creating and tracking tabs
+    - Switching between tabs
+    - Managing tab state
+    - Handling tab operations (open, close, switch)
+    """
+
+    def __init__(self, session: Session):
         self._session = session
         self._all_tabs = OrderedDict()
 
-    @property
-    def driver(self):
-        """driver object for the Tab Manager"""
+    def __iter__(self) -> Iterator[Tab]:
+        """Make TabManager iterable by yielding tab values"""
+        return iter(self._all_tabs.values())
 
+    @property
+    def driver(self) -> webdriver.Chrome | webdriver.Firefox:
+        """driver object for the Tab Manager"""
         return self._session.driver
 
-    def __len__(self):
+    def clear(self) -> None:
+        """Clear all tabs from the manager"""
+
+        self._all_tabs = OrderedDict()
+
+    def __len__(self) -> int:
+        """Return the number of managed tabs"""
         return len(self._all_tabs)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
+        """Return True if there are any managed tabs"""
         return bool(self._all_tabs)
 
-    def __del__(self):
+    def __del__(self) -> None:
+        """Clean up all tabs when the manager is deleted"""
         self._all_tabs = {}
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tab:
+        """Get a tab by index"""
         return list(self._all_tabs.values())[index]
 
-    def __str__(self):
-        return " ".join(list(self))  # noqa
+    def __str__(self) -> str:
+        """Return a string representation of all tab handles"""
+        return " ".join(list(self._all_tabs))
 
-    def current_tab(self) -> [Tab, None]:
+    def current_tab(self) -> Tab | None:
         """Get current active tab"""
-
         tab_handle = self.driver.current_window_handle
         return self.get(tab_handle)
 
-    def get_blank_tab(self, full_screen) -> Tab:
+    def get_blank_tab(self, full_screen: bool) -> Tab:
         """Get a blank tab to work with. Switches to the newly created tab"""
 
-        with lock:
-            windows_before = set(self.driver.window_handles)
-            self.driver.execute_script(scripts.NEW_TAB)
+        windows_before = set(self.driver.window_handles)
 
-            if not (new_window := set(self.driver.window_handles) - windows_before):
-                raise SeleniumOpenTabException("Could not open new tab. Error in getting a blank tab.")
+        self.driver.execute_script(scripts.NEW_TAB)
 
-            new_window = list(new_window)[0]
+        if not (new_window := set(self.driver.window_handles) - windows_before):
+            raise SeleniumOpenTabException("Could not open new tab. Error in getting a blank tab.")
 
-            self.driver.switch_to.window(new_window)
+        new_window = list(new_window)[0]
 
-            new_tab = self.create(new_window, full_screen)
-            new_tab.switch()
+        self.driver.switch_to.window(new_window)
 
-            return new_tab
+        new_tab = self.create(new_window, full_screen)
+        new_tab.switch()
+
+        return new_tab
 
     def open_new_tab(self, url, wait_sec=30, full_screen: bool = True, **op_kw) -> Tab:
         """Open a new tab with a given URL.
@@ -500,7 +525,8 @@ class TabManager:
 
     def add(self, tab: Tab) -> None:
         """Add a tab to the list of tabs"""
-        self._all_tabs.update({tab.tab_handle: tab})
+        with lock:
+            self._all_tabs.update({tab.tab_handle: tab})
 
     def get(self, tab_handle) -> Tab | None:
         """get a Tab object given their handle/id"""
@@ -512,56 +538,49 @@ class TabManager:
 
         return tab in self
 
-    def remove(self, tab: Tab) -> [Tab, None]:
+    def remove(self, tab: Tab) -> Tab | None:
         """Remove a tab from the list of tabs"""
 
         if isinstance(tab, Tab):
             return self._all_tabs.pop(tab.tab_handle, None)
-
-        raise SeleniumRequestException("Invalid type for tab.")
+        return None
 
     @property
     def first_tab(self) -> Tab | None:
         """First tab from the list of tabs of the browser"""
-
         return self[0] if self._all_tabs else None
 
     @property
     def last_tab(self) -> Tab | None:
         """Last tab from the list of tabs of the browser"""
-
         return self[-1] if self._all_tabs else None
 
-    def switch_to_tab(self, tab: Tab):
+    def switch_to_tab(self, tab: Tab) -> bool:
+        """Switch to the specified tab if it exists and is alive"""
         if tab and tab.is_alive and self.exist(tab):
             tab.switch()
             return True
-
         return False
 
-    def switch_to_first_tab(self):
+    def switch_to_first_tab(self) -> bool:
         """Attempts to switch to the first tab"""
-
         _tab = self.first_tab
-
         if _tab and _tab.is_alive and self.exist(_tab):
             _tab.switch()
             return True
-
         return False
 
-    def switch_to_last_tab(self):
+    def switch_to_last_tab(self) -> bool:
         """Switch to the last tab"""
-
         _tab = self.last_tab
-
         if _tab and _tab.is_alive and self.exist(_tab):
             _tab.switch()
             return True
-
         return False
 
     def unmanaged_tabs(self) -> list[Tab]:
+        """Get tabs that are not managed by this manager"""
+
         curr_tab = self.current_tab()
         curr_tabs = set(self._all_tabs)
         tabs = [
@@ -573,6 +592,7 @@ class TabManager:
         for tab in tabs:
             tab.start_url = tab.url
 
-        curr_tab.switch()
+        if curr_tab:
+            curr_tab.switch()
 
         return tabs
