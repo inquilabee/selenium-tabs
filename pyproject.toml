@@ -66,6 +66,9 @@ sourcery = "^1.8.0"
 mypy = "^1.5.1"
 bandit = "^1.7.5"
 
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.2.0"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

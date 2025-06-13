@@ -2,5 +2,4 @@ class SeleniumRequestException(Exception):
     pass
 
 
-class SeleniumOpenTabException(Exception):
-    ...
+class SeleniumOpenTabException(Exception): ...

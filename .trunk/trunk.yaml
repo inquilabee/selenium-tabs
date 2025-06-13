@@ -17,6 +17,8 @@ runtimes:
     - python@3.10.8
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
+  disabled:
+    - prettier
   enabled:
     - actionlint@1.7.4
     - bandit@1.7.10
@@ -28,7 +30,6 @@ lint:
     - markdownlint@0.42.0
     - mypy@1.13.0
     - osv-scanner@1.9.1
-    - prettier@3.3.3
     - ruff@0.7.3
     - shellcheck@0.10.0
     - shfmt@3.6.0
