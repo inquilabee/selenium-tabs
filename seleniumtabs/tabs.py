@@ -525,8 +525,8 @@ class TabManager:
 
     def add(self, tab: Tab) -> None:
         """Add a tab to the list of tabs"""
-        with lock:
-            self._all_tabs.update({tab.tab_handle: tab})
+
+        self._all_tabs.update({tab.tab_handle: tab})
 
     def get(self, tab_handle) -> Tab | None:
         """get a Tab object given their handle/id"""

@@ -46,22 +46,22 @@ include = ["LICENSE"]
 [tool.poetry.dependencies]
 python = "^3.13"
 selenium = "^4.12.0"
-django-environ = "^0.11.1"
+django-environ = "^0.11.2"
 python-dotenv = "^1.0.0"
 PyYAML = "^6.0.1"
 pyquery = "^2.0.0"
 browserjquery = "^0.1.0"
-fake-useragent = "^1.2.1"
+fake-useragent = "^2.2.0"
 tldextract = "^5.1.2"
 webdriver-manager = "^4.0.2"
 schedule = "^1.2.2"
 
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-tox = "^3.24.4"
-black = "^23.7.0"
-ruff = "^0.0.287"
+pytest = "^8.4.0"
+tox = "^4.26.0"
+black = "^25.1.0"
+ruff = "^0.11.13"
 sourcery = "^1.8.0"
 mypy = "^1.5.1"
 bandit = "^1.7.5"
@@ -82,7 +82,7 @@ python_files = ["tests.py", "test_*.py"]
 
 # ==== mypy ====
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 check_untyped_defs = true
 ignore_missing_imports = true
 warn_unused_ignores = true
@@ -171,7 +171,7 @@ exclude = [
 
 line-length = 120
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
