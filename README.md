@@ -2,6 +2,36 @@
 
 A Python library that makes browser automation with Selenium more intuitive by providing a tab-centric interface. Manage multiple browser tabs with ease, perform common operations, and interact with web elements using a clean, Pythonic API.
 
+---
+
+And guess what! You don't need to manually download drivers for the browser—it's all taken care of by the library. Install and start right away.
+
+**Note:** All testing has been done on Chrome.
+
+## 🚀 Top Features
+
+- **Tab Management**: Open, close, switch, and query tab state with ease.
+- **Element Selection**: Use CSS selectors, jQuery, and PyQuery for powerful element querying.
+- **Page Interaction**: Scroll, click, and wait for elements with robust error handling.
+- **Advanced Features**: Direct driver access, task scheduling, and more.
+- **Automatic Driver Management**: No need to manually download or manage browser drivers.
+
+## 🔧 Installation
+
+```bash
+pip install seleniumtabs
+```
+
+Or with Poetry:
+```bash
+poetry add seleniumtabs
+```
+
+## 📋 Requirements
+
+- Python 3.13+
+- Chrome or Firefox browser
+
 ## 🚀 Quick Start
 
 ```python
@@ -105,19 +135,16 @@ with Browser(name="Chrome") as browser:
     tab.schedule_task(refresh_page, period=60)  # Refresh every 60 seconds
 ```
 
-## ✅ Tested Features
+### Direct Driver Access
 
-This library is thoroughly tested for:
+- If a feature is not directly available in the `Tab` object, you can access the underlying Selenium WebDriver directly via `tab.driver`.
+- **Example:**
+  ```python
+  # Access driver methods directly
+  tab.driver.execute_script("return document.title")
+  ```
 
-- **Tab Management**: Opening, closing, switching, and querying tab state.
-- **Element Selection**: CSS selector queries, chaining, and attribute access.
-- **Page Interaction**: Scrolling, clicking, and waiting for elements.
-- **Page Loading**: Full and partial page load handling, including timeouts.
-- **Tab Refresh**: Full and partial refresh with robust error handling.
-- **Task Scheduling**: Periodic tab actions (e.g., auto-refresh).
-- **Integration with jQuery and PyQuery** (see below).
-
----
+- **Fallback Behavior**: If you call a non-existent method on the `Tab` object, an attempt is made to query `tab.driver.method_name` via `__getattribute__`.
 
 ### jQuery Integration
 
@@ -155,22 +182,7 @@ for link in pq("nav a").items():
 print(pq("title").text())
 ```
 
-## 🔧 Installation
-
-```bash
-pip install seleniumtabs
-```
-
-Or with Poetry:
-```bash
-poetry add seleniumtabs
-```
-
-## 📋 Requirements
-
-- Python 3.13+
-- Chrome or Firefox browser
-- Selenium WebDriver
+---
 
 ## 🔍 Browser Options
 
@@ -184,6 +196,21 @@ with Browser(
 ) as browser:
     # Your code here
 ```
+
+
+## ✅ Tested Features
+
+This library is thoroughly tested for:
+
+- **Tab Management**: Opening, closing, switching, and querying tab state.
+- **Element Selection**: CSS selector queries, chaining, and attribute access.
+- **Page Interaction**: Scrolling, clicking, and waiting for elements.
+- **Page Loading**: Full and partial page load handling, including timeouts.
+- **Tab Refresh**: Full and partial refresh with robust error handling.
+- **Task Scheduling**: Periodic tab actions (e.g., auto-refresh).
+- **Integration with jQuery and PyQuery** (see below).
+
+---
 
 ## 🤝 Contributing
 
