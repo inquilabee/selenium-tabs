@@ -14,7 +14,7 @@ runtimes:
   enabled:
     - go@1.21.0
     - node@18.12.1
-    - python@3.10.8
+    - python@3.13.0
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
   disabled:
@@ -36,6 +36,10 @@ lint:
     - taplo@0.9.3
     - trufflehog@3.83.7
     - yamllint@1.35.1
+  ignore:
+    - linters: [bandit]
+      paths:
+        - .*test.*
 actions:
   disabled:
     - trunk-announce

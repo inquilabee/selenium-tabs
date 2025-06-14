@@ -182,24 +182,59 @@ class Tab:
 
         return True
 
-    def open(self, url, partial_load: bool = True, wait: int = 1, wait_for_redirect: int | float = 1):
-        """Open an url in the tab"""
+    def open(
+        self, url, partial_load: bool = True, wait: int = 1, wait_for_redirect: int | float = 1, timeout: int = 30
+    ) -> "Tab":
+        """Open an url in the tab with optional partial loading.
 
-        with contextlib.suppress(Exception):
+        Args:
+            url: The URL to open
+            partial_load: Whether to allow partial loading if full load times out
+            wait: Minimum wait time after loading (seconds)
+            wait_for_redirect: Maximum time to wait for redirects (seconds)
+            timeout: Maximum time to wait for initial page load (seconds)
+
+        Returns:
+            self: The tab instance for method chaining
+
+        Raises:
+            SeleniumOpenTabException: If the page cannot be loaded even partially
+        """
+        start_time = time.perf_counter()
+
+        try:
+            # Attempt full page load with timeout
+            self.driver.set_page_load_timeout(timeout)
             self.driver.get(url)
-            humanized_wait(wait or 0)  # minimum wait
-            self.wait_for_loading(wait_for_redirect)
-            return self
 
-        if partial_load:
-            self.driver.execute_script(scripts.STOP_PAGE_LOADING)
-            time.sleep(1)
-
-            if url in self.domain or self.domain in url:
-                logger.info(f"Page partially loaded: {self.url}")
+            # Wait for minimum time and check loading
+            humanized_wait(wait or 0)
+            if self.wait_for_loading(wait_for_redirect):
+                logger.info(f"Page fully loaded: {self.url}")
                 return self
 
-        raise SeleniumOpenTabException("Could not open a new tab.")
+        except Exception as e:
+            logger.warning(f"Full page load failed after {time.perf_counter() - start_time:.1f}s: {str(e)}")
+
+            if not partial_load:
+                raise SeleniumOpenTabException(f"Could not open {url} - full load required but failed") from e
+
+        # If we get here, either full load failed or partial load is allowed
+        if partial_load:
+            try:
+                # Stop loading and check if we got something useful
+                self.driver.execute_script(scripts.STOP_PAGE_LOADING)
+                humanized_wait(1)  # Give a moment for any pending operations
+
+                # Check if we got at least the domain loaded
+                if url in self.domain or self.domain in url:
+                    logger.info(f"Page partially loaded after {time.perf_counter() - start_time:.1f}s: {self.url}")
+                    return self
+
+            except Exception as e:
+                logger.error(f"Partial load failed: {str(e)}")
+
+        raise SeleniumOpenTabException(f"Could not open {url} - neither full nor partial load succeeded")
 
     def close(self):
         browser_sessions.close_tab(self)
@@ -501,7 +536,7 @@ class TabManager:
 
         return new_tab
 
-    def open_new_tab(self, url, wait_sec=30, full_screen: bool = True, **op_kw) -> Tab:
+    def open_new_tab(self, url, wait_sec=30, full_screen: bool = True, **open_kw) -> Tab:
         """Open a new tab with a given URL.
 
         It also waits for a specified number of seconds for the specified tag to appear on the page"""
@@ -510,7 +545,7 @@ class TabManager:
         blank_tab.start_url = url
 
         blank_tab.switch()
-        blank_tab.open(url, **op_kw)
+        blank_tab.open(url, **open_kw)
 
         blank_tab.wait_for_body_tag_presence_and_visibility(wait=wait_sec)
 

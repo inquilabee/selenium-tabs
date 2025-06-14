@@ -1,118 +1,194 @@
-# Selenium Tabs: Enhanced Tab Management for Selenium
+# Selenium Tabs
 
-Simplify your web automation tasks with **Selenium Tabs**, a Python package that takes Selenium to the next level with streamlined tab management and additional features.
+A Python library that makes browser automation with Selenium more intuitive by providing a tab-centric interface. Manage multiple browser tabs with ease, perform common operations, and interact with web elements using a clean, Pythonic API.
 
-### Installation
+## 🚀 Quick Start
 
-Install **Selenium Tabs** from PyPI with ease:
+```python
+from seleniumtabs import Browser
+
+# Create a browser instance and open multiple tabs
+with Browser(name="Chrome", implicit_wait=10) as browser:
+    # Open multiple websites in different tabs
+    google = browser.open("https://google.com")
+    yahoo = browser.open("https://yahoo.com")
+
+    # Work with tabs
+    print(f"Current tab: {browser.current_tab}")
+    print(f"First tab: {browser.first_tab}")
+    print(f"Last tab: {browser.last_tab}")
+
+    # Switch between tabs
+    yahoo.switch()
+    google.switch()
+
+    # Close a tab
+    yahoo.close()
+```
+
+## ✨ Key Features
+
+### 1. Tab Management
+```python
+with Browser(name="Chrome") as browser:
+    # Open tabs
+    tab1 = browser.open("https://example.com")
+    tab2 = browser.open("https://example.org")
+
+    # Access tab properties
+    print(tab1.title)  # Page title
+    print(tab1.url)    # Current URL
+    print(tab1.domain) # Domain name
+
+    # Check tab state
+    print(tab1.is_active)  # Is this the active tab?
+    print(tab1.is_alive)   # Is the tab still open?
+```
+
+### 2. Element Selection
+```python
+with Browser(name="Chrome") as browser:
+    tab = browser.open("https://example.com")
+
+    # CSS Selectors
+    elements = tab.css("div.class-name")
+    for element in elements:
+        print(element.text)
+
+    # Chaining selectors
+    main_content = tab.css("main")[0]
+    links = main_content.css("a")
+
+    # Get element attributes
+    for link in links:
+        print(link.get_attribute("href"))
+```
+
+### 3. Page Interaction
+```python
+with Browser(name="Chrome") as browser:
+    tab = browser.open("https://example.com")
+
+    # Scrolling
+    tab.scroll_down(times=3)  # Scroll down 3 times
+    tab.scroll_up(times=2)    # Scroll up 2 times
+    tab.scroll_to_bottom()    # Scroll to page bottom
+
+    # Clicking elements
+    element = tab.css("button")[0]
+    tab.click(element)
+
+    # Wait for elements
+    tab.wait_for_presence("div", "class-name", wait=10)
+    tab.wait_for_visibility("button", "submit", wait=5)
+```
+
+### 4. Advanced Features
+```python
+with Browser(name="Chrome") as browser:
+    tab = browser.open("https://example.com")
+
+    # jQuery-like operations
+    jq_elements = tab.jq("div.class-name")
+
+    # PyQuery for HTML parsing
+    pq = tab.pyquery
+    text_content = pq.text()
+
+    # Run JavaScript
+    result = tab.run_js("return document.title")
+
+    # Schedule tasks
+    def refresh_page(tab):
+        tab.refresh()
+
+    tab.schedule_task(refresh_page, period=60)  # Refresh every 60 seconds
+```
+
+## ✅ Tested Features
+
+This library is thoroughly tested for:
+
+- **Tab Management**: Opening, closing, switching, and querying tab state.
+- **Element Selection**: CSS selector queries, chaining, and attribute access.
+- **Page Interaction**: Scrolling, clicking, and waiting for elements.
+- **Page Loading**: Full and partial page load handling, including timeouts.
+- **Tab Refresh**: Full and partial refresh with robust error handling.
+- **Task Scheduling**: Periodic tab actions (e.g., auto-refresh).
+- **Integration with jQuery and PyQuery** (see below).
+
+---
+
+### jQuery Integration
+
+- You can use the `tab.jq` or `tab.jquery` property to run jQuery-like selectors and operations directly on the live browser DOM.
+- Tested features:
+  - Selecting elements with jQuery syntax.
+  - Chaining jQuery selectors.
+  - Accessing and manipulating attributes and text.
+  - Interacting with elements (e.g., click, scroll).
+
+**Example:**
+```python
+jq_elements = tab.jq("div.class-name")
+for el in jq_elements:
+    print(el.text)
+```
+
+---
+
+### PyQuery Integration
+
+- You can use the `tab.pyquery` or `tab.pq` property to parse and query the current page's HTML snapshot using PyQuery (lxml-based).
+- Tested features:
+  - `.items()` for iterating over selections and sub-selections.
+  - `.find()`, `.parent()`, `.children()` for DOM navigation.
+  - `.attr()`, `.text()`, `.html()` for attribute and content access.
+  - Consistency between `tab.pyquery` and `tab.pq`.
+  - Integration with real-world pages (e.g., Yahoo).
+
+**Example:**
+```python
+pq = tab.pyquery
+for link in pq("nav a").items():
+    print(link.attr("href"))
+print(pq("title").text())
+```
+
+## 🔧 Installation
 
 ```bash
 pip install seleniumtabs
 ```
 
-### Core Idea
-
-In **Selenium Tabs**, a `browser` contains multiple `tabs`, enabling you to interact with web pages more efficiently. You can perform various actions on both `Tab` and `Browser` objects, making web automation a breeze.
-
-**Actions/Activities on `Tab` Objects:**
-- Check tab status (open/closed)
-- Switch to a specific tab
-- Close a tab
-- Access page source, title, and headings
-- Select elements and perform actions using Jquery
-- Perform actions on a specific tab (e.g., click, scroll, close)
-- CSS selection made easy
-
-**Actions/Activities on `Browser` Objects:**
-- Open new tabs with URLs
-- Retrieve a list of open tabs
-- Switch to a specific tab (first, last, or any)
-- Close a tab
-- Close the entire browser
-
-### Working with Driver Objects
-
-A `driver` object is available on any `Tab` object,
-allowing you to access the browser/driver object
-and use Selenium methods when needed without making explicit switches to a specific tab.
-
-### Features
-
-**Selenium Tabs** offers a range of features to enhance your web automation tasks:
-- Effortless tab management
-- Seamless tab switching
-- Real-time tab status tracking
-- Convenient tab closure
-- Built-in functions for scrolling, clicking, waiting for conditions, finding and more
-- Access to the underlying Selenium `driver` object for advanced usage
-- Access `driver` methods directly on tabs
-- Automatic User agent selection based on set browser
-- Basic steps to avoid getting flagged as an automation script by websites
-- Use the all-powerful `pyquery` object access on each tab
-- Execute jquery functions using `.jq` or `.jquery` attributes
-
-### Usage
-
-To get started with **Selenium Tabs**, create a `Browser` object and open tabs using the `open` method:
-
-#### Browser
-
-Create a `Browser` object, specifying the browser name (e.g. "Chrome" or "FireFox").
-The project automatically downloads drivers.
-
-```python
-from seleniumtabs import Browser, Tab
-
-
-with Browser(name="Chrome", implicit_wait=10) as browser:
-    google = browser.open("https://google.com")
-    yahoo = browser.open("https://yahoo.com")
-    bing = browser.open("https://bing.com")
-    duck_duck = browser.open("https://duckduckgo.com/")
-
-    # Scroll on the page (example)
-    yahoo.scroll(times=2)
-    yahoo.scroll_to_bottom()
-
-    # Working with tabs
-    for tab in browser.tabs:
-        print(tab)
-
-    print(browser.tabs)
-    print(browser.current_tab)
-
-    # Selecting elements with JQuery (using browserjquery package)
-    print(yahoo.jq("a"))
-
-    # Selecting using CSS Selectors (no JQuery needed)
-    for item in yahoo.css(".stream-items"):
-        for a in item.css("a"):
-            print(a, a.text)
-
-    # Some `Tab` attributes/properties
-    print(google.title)
-    print(google.url)
-    print(google.page_source)
-
-    # Closing a tab
-    bing.close() # Or browser.close_tab(bing)
-
-    # Switching to a tab
-    yahoo.switch()
-    google.switch()
-
-    # Accessing the driver object
-    print(google.driver.title, google.title) # Should output same value
-
-    # Directly access driver methods and attributes
-    print(google.current_window_handle, google.tab_handle)
-    google.refresh()
-
-    # PyQuery
-    print(google.pyquery.text())
-    print(google.pq.size())
+Or with Poetry:
+```bash
+poetry add seleniumtabs
 ```
 
-### TODO
+## 📋 Requirements
 
-- Complete documentation
+- Python 3.13+
+- Chrome or Firefox browser
+- Selenium WebDriver
+
+## 🔍 Browser Options
+
+```python
+with Browser(
+    name="Chrome",           # Browser name ("Chrome" or "FireFox")
+    implicit_wait=10,        # Default wait time for elements
+    headless=False,          # Run browser in headless mode
+    full_screen=True,        # Start browser in full screen
+    page_load_timeout=60     # Page load timeout in seconds
+) as browser:
+    # Your code here
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
