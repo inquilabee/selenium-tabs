@@ -1,3 +1,5 @@
+import logging
+
 from fake_useragent import UserAgent
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -7,10 +9,9 @@ from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager as FireFoxDriverManager
 
-from seleniumtabs import settings
 from seleniumtabs.js_scripts import scripts
 
-logger = settings.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Session:
@@ -56,10 +57,14 @@ class Session:
         self.headless = headless
 
         self.full_screen = full_screen
+
         self._driver: webdriver.Chrome | webdriver.Firefox = self._get_driver()
 
         if self.full_screen:
+            logger.info("Maximizing window")
             self.maximise_window()
+
+        self._log_session_info()
 
     @property
     def driver(self):
@@ -150,3 +155,32 @@ class Session:
 
     def __del__(self):
         self.driver.quit()
+
+    def _log_session_info(self) -> None:
+        """Log information about the browser session."""
+        logger.info("New Browser Session Started.")
+        logger.info(f"Browser Type: {self.browser}")
+        logger.info(f"User Agent: {self.user_agent}")
+        logger.info(f"Headless Mode: {self.headless}")
+        logger.info(f"Full Screen: {self.full_screen}")
+        logger.info(f"Implicit Wait: {self.implicit_wait}s")
+        logger.info(f"Page Load Timeout: {self.page_load_timeout}s")
+
+        # Log additional browser capabilities
+        capabilities = self._driver.capabilities
+        logger.info("Browser Capabilities:")
+        for key, value in capabilities.items():
+            if key not in ["chrome", "firefox"]:  # Skip large capability objects
+                logger.info(f"  {key}: {value}")
+
+        # Log browser version
+        if "browserVersion" in capabilities:
+            logger.info(f"Browser Version: {capabilities['browserVersion']}")
+        if "browserName" in capabilities:
+            logger.info(f"Browser Name: {capabilities['browserName']}")
+
+        # Log platform info
+        if "platformName" in capabilities:
+            logger.info(f"Platform: {capabilities['platformName']}")
+
+        logger.info("Browser session initialization complete.")

@@ -1,9 +1,13 @@
+import logging
+
 from seleniumtabs.browser_management import browser_sessions
 from seleniumtabs.exceptions import SeleniumRequestException
 from seleniumtabs.schedule_tasks import task_scheduler
 from seleniumtabs.session import Session
 from seleniumtabs.tabs import Tab, TabManager
 from seleniumtabs.wait import humanized_wait
+
+logger = logging.getLogger(__name__)
 
 
 class Browser:
@@ -21,19 +25,24 @@ class Browser:
         headless: bool = False,
         full_screen: bool = True,
     ):
+        logger.info(f"Initializing Browser with name: {name}")
         self.name = name
 
+        logger.info("Creating new Session")
         self._session = Session(
             name,
             headless=headless,
             implicit_wait=implicit_wait,
             user_agent=user_agent,
+            full_screen=full_screen,
         )
-        self._manager: TabManager = TabManager(self._session)
+        logger.info("Session created successfully")
 
+        self._manager: TabManager = TabManager(self._session)
         self.full_screen = full_screen
 
         browser_sessions.add_browser(self)
+        logger.info("Browser initialization complete")
 
     def __enter__(self) -> "Browser":
         """Context manager entry point"""
@@ -41,6 +50,10 @@ class Browser:
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Context manager exit point - ensures browser is closed"""
+        self.close()
+
+    def __del__(self) -> None:
+        """Destructor to ensure browser cleanup when object is garbage collected"""
         self.close()
 
     @property
@@ -109,9 +122,24 @@ class Browser:
 
     def close(self) -> None:
         """Close the browser and clean up all resources"""
-        humanized_wait(1)
-        self._manager.clear()
-        self._session.close()
+        try:
+            # Cancel any scheduled tasks first
+            task_scheduler.cancel_all_tasks()
+
+            # Close all tabs and clear the manager
+            if hasattr(self, "_manager"):
+                self._manager.clear()
+
+            # Close the session
+            if hasattr(self, "_session"):
+                self._session.close()
+
+            # Remove from browser sessions
+            if hasattr(self, "name"):
+                browser_sessions.browser_sessions = [b for b in browser_sessions.browser_sessions if b != self]
+
+        except Exception:
+            raise
 
     def __contains__(self, item: Tab) -> bool:
         """Check if a tab exists in the browser"""

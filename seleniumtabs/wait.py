@@ -1,9 +1,8 @@
+import logging
 import random
 import time
 
-from seleniumtabs import settings
-
-logger = settings.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def humanized_wait(

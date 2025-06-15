@@ -1,12 +1,11 @@
+import logging
 import time
 from collections.abc import Callable
 from typing import Any
 
 import schedule
 
-from seleniumtabs import settings
-
-logger = settings.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class BrowserTaskScheduler:

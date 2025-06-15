@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import random
 import time
 from collections import OrderedDict
@@ -16,7 +17,6 @@ from selenium.webdriver.remote import webelement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from seleniumtabs import settings
 from seleniumtabs.browser_management import browser_sessions
 from seleniumtabs.css_selectors import SelectableCSS
 from seleniumtabs.exceptions import SeleniumOpenTabException, SeleniumRequestException
@@ -26,7 +26,7 @@ from seleniumtabs.session import Session
 from seleniumtabs.utils.urls import get_domain
 from seleniumtabs.wait import humanized_wait
 
-logger = settings.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 lock = Lock()
 

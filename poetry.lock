@@ -89,19 +89,20 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "browserjquery"
-version = "0.1.1"
-description = "Query using Jquery on selenium driver."
+version = "2.0.1"
+description = "A Python library for using jQuery with Selenium WebDriver"
 optional = false
-python-versions = ">=3.10,<4.0"
+python-versions = "<4.0,>=3.13"
 files = [
-    {file = "browserjquery-0.1.1-py3-none-any.whl", hash = "sha256:70f0d1b1f7b93ee3c299f40eb0cfc8ec20794329c5af64af3e6f9983c0b7868b"},
-    {file = "browserjquery-0.1.1.tar.gz", hash = "sha256:0cb44399d6a96bf5607621d4ddfaa0197a88e4804c223f19f6dfa7ec0a31a7ab"},
+    {file = "browserjquery-2.0.1-py3-none-any.whl", hash = "sha256:2f8c4d8fc0944985b234eb378da0ac6ef0c044705e935722819b50d5efc561c2"},
+    {file = "browserjquery-2.0.1.tar.gz", hash = "sha256:f822e39ce61d818dee829bb865bef2df4f34c422f1c27eb827bed90483119ac1"},
 ]
 
 [package.dependencies]
 django-environ = ">=0.11.2,<0.12.0"
 python-dotenv = ">=1.0.0,<2.0.0"
 pyyaml = ">=6.0.1,<7.0.0"
+ruff = ">=0.11.13,<0.12.0"
 selenium = ">=4.12.0,<5.0.0"
 
 [[package]]
@@ -117,13 +118,13 @@ files = [
 
 [[package]]
 name = "certifi"
-version = "2025.4.26"
+version = "2025.6.15"
 description = "Python package for providing Mozilla's CA Bundle."
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "certifi-2025.4.26-py3-none-any.whl", hash = "sha256:30350364dfe371162649852c63336a15c70c6510c2ad5015b21c2345311805f3"},
-    {file = "certifi-2025.4.26.tar.gz", hash = "sha256:0a816057ea3cdefcef70270d2c515e4506bbc954f417fa5ade2021213bb8f0c6"},
+    {file = "certifi-2025.6.15-py3-none-any.whl", hash = "sha256:2e0c7ce7cb5d8f8634ca55d2ba7e6ec2689a2fd6537d8dec1296a477a4910057"},
+    {file = "certifi-2025.6.15.tar.gz", hash = "sha256:d747aa5a8b9bbbb1bb8c22bb13e22bd1f18e9796defa16bab421f7f7a317323b"},
 ]
 
 [[package]]
@@ -1357,4 +1358,4 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.13"
-content-hash = "6c7d0d5bb02c6599f2f26a5a21b3312e1da7129013d6860b2ad7a8a78f33d695"
+content-hash = "eea5577475b44a5be6e56e188698ec35ca574208413bbaefeea76595cdc9e285"
