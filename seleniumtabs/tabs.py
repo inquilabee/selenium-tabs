@@ -67,11 +67,11 @@ class Tab:
 
     __repr__ = __str__
 
-    def __getattribute__(self, item):
-        with contextlib.suppress(Exception):
-            return super().__getattribute__(item)
+    # def __getattribute__(self, item):
+    #     with contextlib.suppress(Exception):
+    #         return super().__getattribute__(item)
 
-        return getattr(self.driver, item)
+    #     return getattr(self.driver, item)
 
     def __del__(self):
         self.close()

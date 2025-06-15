@@ -17,6 +17,8 @@ class BrowserTaskScheduler:
     - Execute scheduled tasks with timeout control
     - Track task execution status
     - Handle task errors gracefully
+
+    Note: Tasks are executed sequentially since Selenium can only interact with one tab at a time.
     """
 
     def __init__(self):
@@ -44,12 +46,12 @@ class BrowserTaskScheduler:
             def wrapper(tab, *args: Any, **kwargs: Any) -> None:
                 try:
                     logger.debug(f"Executing task {task.__name__} on tab {tab}")
-                    tab.switch()
+                    tab.switch()  # Switch to the correct tab
                     time.sleep(0.25)  # Small delay to ensure tab switch
                     task(tab, *args, **kwargs)
                 except Exception as e:
                     logger.error(f"Error executing task {task.__name__}: {str(e)}")
-                    raise
+                    # Don't re-raise the exception - just log it and continue
 
             return wrapper
 
@@ -80,28 +82,38 @@ class BrowserTaskScheduler:
         self._tasks.clear()
         logger.info("Cancelled all tasks")
 
-    def execute_tasks(self, max_time: int | None = None) -> None:
+    def execute_tasks(self, max_time: int | None = None, sleep_time: float = 1.0) -> None:
         """Execute all scheduled tasks across their respective tabs.
 
         Args:
             max_time: Maximum time in seconds to execute tasks. If None, no time limit is applied.
+            sleep_time: Time in seconds to sleep between task checks. Defaults to 1.0 second.
+                      Lower values will check for tasks more frequently but use more CPU.
+                      Higher values will use less CPU but may delay task execution.
+
+        Raises:
+            ValueError: If sleep_time is not positive
         """
+        if sleep_time <= 0:
+            raise ValueError("sleep_time must be positive")
+
         self._running = True
         start_time = time.time()
 
         try:
             while self._running:
-                schedule.run_pending()
-                time.sleep(1)
+                try:
+                    schedule.run_pending()
+                except Exception as e:
+                    logger.error(f"Error during task execution: {str(e)}")
+                    # Don't re-raise the exception - just log it and continue
+                time.sleep(sleep_time)
 
                 if max_time and time.time() - start_time > max_time:
                     logger.info(f"Reached maximum execution time of {max_time} seconds")
                     break
         except KeyboardInterrupt:
             logger.info("Task execution interrupted by user")
-        except Exception as e:
-            logger.error(f"Error during task execution: {str(e)}")
-            raise
         finally:
             self._running = False
 

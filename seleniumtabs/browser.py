@@ -170,10 +170,13 @@ class Browser:
         if self._manager and self._manager.last_tab:
             self._manager.last_tab.switch()
 
-    def execute_task(self, max_time: int | None = None) -> None:
+    def execute_task(self, max_time: int | None = None, sleep_time: float = 1.0) -> None:
         """Execute scheduled tasks.
 
         Args:
             max_time: Maximum time in seconds to execute tasks. If None, no time limit is applied.
+            sleep_time: Time in seconds to sleep between task checks. Defaults to 1.0 second.
+                      Lower values will check for tasks more frequently but use more CPU.
+                      Higher values will use less CPU but may delay task execution.
         """
-        task_scheduler.execute_tasks(max_time)
+        task_scheduler.execute_tasks(max_time=max_time, sleep_time=sleep_time)
