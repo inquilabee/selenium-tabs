@@ -67,11 +67,11 @@ class Tab:
 
     __repr__ = __str__
 
-    # def __getattribute__(self, item):
-    #     with contextlib.suppress(Exception):
-    #         return super().__getattribute__(item)
+    def __getattribute__(self, item):
+        with contextlib.suppress(Exception):
+            return super().__getattribute__(item)
 
-    #     return getattr(self.driver, item)
+        return getattr(self.driver, item)
 
     def __del__(self):
         self.close()
@@ -400,6 +400,8 @@ class Tab:
 
                     last_height = self.page_height
 
+    # Visibility and Presence
+
     def wait_for_presence_of_element(self, element, wait):
         return WebDriverWait(self.driver, wait).until(EC.presence_of_element_located(element))
 
@@ -424,9 +426,78 @@ class Tab:
     def wait_for_body_tag_presence_and_visibility(self, wait: int = 5):
         self.wait_for_presence_and_visibility(by=By.TAG_NAME, key="body", wait=wait)
 
-    def wait_until_staleness(self, element, wait: int = 5):
-        """Wait until the passed element is no longer present on the page"""
-        WebDriverWait(self.driver, wait).until(EC.staleness_of(element))
+    # Staleness and invisibility
+
+    def wait_for_staleness_of_element(self, element, wait: int = 5):
+        """Wait until the passed element is no longer attached to the DOM.
+
+        Args:
+            element: The element to wait for staleness
+            wait: Maximum time to wait in seconds
+
+        Returns:
+            bool: True if element became stale within wait time, False otherwise
+        """
+        return WebDriverWait(self.driver, wait).until(EC.staleness_of(element))
+
+    def wait_for_staleness(self, by, key, wait: int = 5):
+        """Wait until the element matching the locator is no longer attached to the DOM.
+
+        Args:
+            by: The locator strategy (e.g., By.ID, By.CLASS_NAME)
+            key: The locator value
+            wait: Maximum time to wait in seconds
+
+        Returns:
+            bool: True if element became stale within wait time, False otherwise
+        """
+        try:
+            element = self.driver.find_element(by, key)
+            return self.wait_for_staleness_of_element(element, wait)
+        except Exception:
+            return False
+
+    def wait_for_invisibility_of_element(self, element, wait: int = 5):
+        """Wait until the passed element is no longer visible.
+
+        Args:
+            element: The element to wait for invisibility
+            wait: Maximum time to wait in seconds
+
+        Returns:
+            bool: True if element became invisible within wait time, False otherwise
+        """
+        return WebDriverWait(self.driver, wait).until(EC.invisibility_of_element_located(element))
+
+    def wait_for_invisibility(self, by, key, wait: int = 5):
+        """Wait until the element matching the locator is no longer visible.
+
+        Args:
+            by: The locator strategy (e.g., By.ID, By.CLASS_NAME)
+            key: The locator value
+            wait: Maximum time to wait in seconds
+
+        Returns:
+            bool: True if element became invisible within wait time, False otherwise
+        """
+        return WebDriverWait(self.driver, wait).until(EC.invisibility_of_element_located((by, key)))
+
+    def wait_for_disappearance(self, by, key, wait: int = 5):
+        """Wait until the element matching the locator is no longer present in the DOM.
+
+        Args:
+            by: The locator strategy (e.g., By.ID, By.CLASS_NAME)
+            key: The locator value
+            wait: Maximum time to wait in seconds
+
+        Returns:
+            bool: True if element disappeared within wait time, False otherwise
+        """
+        try:
+            WebDriverWait(self.driver, wait).until_not(EC.presence_of_element_located((by, key)))
+            return True
+        except Exception:
+            return False
 
     def wait_for_url(self, url: str, wait: int = 10) -> bool:
         """Wait until the url is available.
