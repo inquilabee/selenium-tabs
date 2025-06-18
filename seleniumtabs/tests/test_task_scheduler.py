@@ -54,10 +54,7 @@ def test_task_cancellation_with_time_website(browser):
     # Wait a bit
     time.sleep(2)
 
-    # Cancel the task
-    from seleniumtabs.schedule_tasks import task_scheduler
-
-    task_scheduler.cancel_task("check_time")
+    browser.task_scheduler.cancel_task("check_time")
 
     # Wait a bit more
     time.sleep(2)
@@ -144,3 +141,93 @@ def test_task_execution_timing(browser):
 
     # Task should have executed multiple times
     assert len(times_checked) >= 2, "Task should have executed multiple times"
+
+
+def test_task_cancellation_on_tab_close(browser):
+    """Test that tasks are cancelled when their tab is closed."""
+    # Open two tabs
+    tab1 = browser.open("https://time.is")
+    tab2 = browser.open("https://time.is")
+
+    # Schedule tasks on both tabs
+    times_checked1 = []
+    times_checked2 = []
+
+    def check_time1(tab):
+        current_time = tab.find_element(By.ID, "clock").text
+        times_checked1.append(current_time)
+        print(f"Tab 1 time: {current_time}")
+
+    def check_time2(tab):
+        current_time = tab.find_element(By.ID, "clock").text
+        times_checked2.append(current_time)
+        print(f"Tab 2 time: {current_time}")
+
+    # Schedule tasks
+    tab1.schedule_task(check_time1, period=1)
+    tab2.schedule_task(check_time2, period=1)
+
+    # Start task execution
+    browser.execute_task(max_time=2, sleep_time=0.5)
+
+    # Verify both tasks are running
+    assert browser.task_scheduler.is_task_running("check_time1"), "Tab1's task should be running"
+    assert browser.task_scheduler.is_task_running("check_time2"), "Tab2's task should be running"
+
+    # Close tab1
+    browser.close_tab(tab1)
+
+    # Continue task execution
+    browser.execute_task(max_time=2, sleep_time=0.5)
+
+    # Verify task status
+    assert not browser.task_scheduler.is_task_running("check_time1"), "Tab1's task should have stopped"
+    assert browser.task_scheduler.is_task_running("check_time2"), "Tab2's task should still be running"
+
+
+def test_task_cancellation_on_close_all_tabs(browser):
+    """Test that all tasks are cancelled when using close_all_tabs()."""
+    # Open multiple tabs
+    tab1 = browser.open("https://time.is")
+    tab2 = browser.open("https://time.is")
+    tab3 = browser.open("https://time.is")
+
+    # Schedule tasks on all tabs
+    times_checked1 = []
+    times_checked2 = []
+    times_checked3 = []
+
+    def check_time1(tab):
+        current_time = tab.find_element(By.ID, "clock").text
+        times_checked1.append(current_time)
+        print(f"Tab 1 time: {current_time}")
+
+    def check_time2(tab):
+        current_time = tab.find_element(By.ID, "clock").text
+        times_checked2.append(current_time)
+        print(f"Tab 2 time: {current_time}")
+
+    def check_time3(tab):
+        current_time = tab.find_element(By.ID, "clock").text
+        times_checked3.append(current_time)
+        print(f"Tab 3 time: {current_time}")
+
+    # Schedule tasks
+    tab1.schedule_task(check_time1, period=1)
+    tab2.schedule_task(check_time2, period=1)
+    tab3.schedule_task(check_time3, period=1)
+
+    # Start task execution
+    browser.execute_task(max_time=2, sleep_time=0.5)
+
+    # Verify all tasks are running
+    assert browser.task_scheduler.is_task_running("check_time1"), "Tab1's task should be running"
+    assert browser.task_scheduler.is_task_running("check_time2"), "Tab2's task should be running"
+    assert browser.task_scheduler.is_task_running("check_time3"), "Tab3's task should be running"
+
+    # Close all tabs
+    browser.close_all_tabs()
+
+    # Verify no tasks are running
+    assert not browser.task_scheduler._tasks, "No tasks should be running after closing all tabs"
+    assert not browser.task_scheduler._tab_tasks, "No tab tasks should be registered after closing all tabs"

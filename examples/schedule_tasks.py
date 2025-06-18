@@ -14,7 +14,6 @@ import time
 from typing import Any
 
 from seleniumtabs import Browser, settings
-from seleniumtabs.schedule_tasks import task_scheduler
 
 # Setup logging
 settings.setup_logging()
@@ -69,8 +68,8 @@ def main():
         logger.info("Managing tasks...")
 
         # Cancel specific tasks
-        task_scheduler.cancel_task("refresh_page")
-        task_scheduler.cancel_task("scroll_page")
+        browser.task_scheduler.cancel_task("refresh_page")
+        browser.task_scheduler.cancel_task("scroll_page")
 
         # Execute remaining tasks with different sleep time
         logger.info("Executing remaining tasks with 2-second sleep...")
@@ -89,7 +88,7 @@ def main():
         finally:
             # Clean up - cancel all tasks
             logger.info("Cleaning up - cancelling all tasks...")
-            task_scheduler.cancel_all_tasks()
+            browser.task_scheduler.cancel_all_tasks()
 
 
 if __name__ == "__main__":

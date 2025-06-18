@@ -27,7 +27,7 @@ skip_glob = []
 
 [tool.poetry]
 name = "seleniumtabs"
-version = "2.0.0"
+version = "2.1.0"
 packages = [{ include = "seleniumtabs" }]
 description = "Selenium with tab management in Python"
 authors = ["Vishal Kumar Mishra <vishal.k.mishra2@gmail.com>"]
@@ -44,17 +44,18 @@ keywords = [
 include = ["LICENSE"]
 
 [tool.poetry.dependencies]
-python = "^3.13"
-selenium = "^4.12.0"
-django-environ = "^0.11.2"
-python-dotenv = "^1.0.0"
-PyYAML = "^6.0.1"
-pyquery = "^2.0.0"
+python = ">=3.13,<4.0"
+selenium = ">=4.12.0"
+django-environ = ">=0.11.2"
+python-dotenv = ">=1.0.0"
+PyYAML = ">=6.0.1"
+pyquery = ">=2.0.0"
 browserjquery = "^2.0.1"
 fake-useragent = "^2.2.0"
 tldextract = "^5.1.2"
-webdriver-manager = "^4.0.2"
-schedule = "^1.2.2"
+webdriver-manager = ">=4.0.2"
+schedule = ">=1.2.2"
+pytest-cov = "^6.2.1"
 
 
 [tool.poetry.dev-dependencies]

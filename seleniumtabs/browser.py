@@ -2,7 +2,7 @@ import logging
 
 from seleniumtabs.browser_management import browser_sessions
 from seleniumtabs.exceptions import SeleniumRequestException
-from seleniumtabs.schedule_tasks import task_scheduler
+from seleniumtabs.schedule_tasks import BrowserTaskScheduler, task_scheduler
 from seleniumtabs.session import Session
 from seleniumtabs.tabs import Tab, TabManager
 from seleniumtabs.wait import humanized_wait
@@ -112,6 +112,9 @@ class Browser:
             SeleniumRequestException: If the tab does not exist
         """
         if self._manager.exist(tab):
+            # Cancel any tasks scheduled for this tab
+            task_scheduler.cancel_tab_tasks(tab)
+
             tab.switch()
             self._remove_tab(tab=tab)
             humanized_wait(1)
@@ -119,6 +122,21 @@ class Browser:
             return True
 
         raise SeleniumRequestException("Tab does not exist.")
+
+    def close_all_tabs(self) -> None:
+        """Close all tabs while keeping the browser instance alive.
+
+        This method:
+        1. Cancels any scheduled tasks
+        2. Closes all tabs in reverse order (to avoid issues with tab handles)
+        3. Clears the tab manager
+        4. Keeps the browser session active
+        """
+        # Cancel any scheduled tasks first
+        task_scheduler.cancel_all_tasks()
+
+        for tab in self.tabs:
+            tab.close()
 
     def close(self) -> None:
         """Close the browser and clean up all resources"""
@@ -170,6 +188,10 @@ class Browser:
         if self._manager and self._manager.last_tab:
             self._manager.last_tab.switch()
 
+    @property
+    def task_scheduler(self) -> BrowserTaskScheduler:
+        return task_scheduler
+
     def execute_task(self, max_time: int | None = None, sleep_time: float = 1.0) -> None:
         """Execute scheduled tasks.
 
@@ -179,4 +201,4 @@ class Browser:
                       Lower values will check for tasks more frequently but use more CPU.
                       Higher values will use less CPU but may delay task execution.
         """
-        task_scheduler.execute_tasks(max_time=max_time, sleep_time=sleep_time)
+        self.task_scheduler.execute_tasks(max_time=max_time, sleep_time=sleep_time)
