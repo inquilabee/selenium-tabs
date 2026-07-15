@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seleniumtabs"
-version = "2.1.1"
+version = "2.1.2"
 description = "Selenium with tab management in Python"
 readme = "README.md"
 requires-python = ">=3.13,<4.0"

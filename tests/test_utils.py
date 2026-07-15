@@ -1,6 +1,7 @@
 import pytest
+from selenium.webdriver.common.by import By
 
-from seleniumtabs.utils import urls
+from seleniumtabs.utils import core, urls
 from seleniumtabs.wait import duration_to_type, humanized_wait, humanized_wait_duration
 
 
@@ -52,3 +53,13 @@ def test_duration_to_type_uses_word_count_and_variation(monkeypatch):
     monkeypatch.setattr("seleniumtabs.wait.random.uniform", lambda min_value, max_value: 1.0)
 
     assert duration_to_type("hello world", speed=60) == 2.2
+
+
+def test_find_parent_element_uses_parent_xpath():
+    class Element:
+        def find_element(self, by, value):
+            assert by == By.XPATH
+            assert value == ".."
+            return "parent"
+
+    assert core.find_parent_element(Element()) == "parent"

@@ -97,6 +97,10 @@ class Session:
         if self.headless:
             driver_options.add_argument("--headless")
 
+        if self.browser == "FireFox":
+            driver_options.set_preference("general.useragent.override", self.user_agent)
+            return driver_options
+
         driver_options.add_argument("--disable-gpu")
         driver_options.add_argument("--disable-extensions")
         driver_options.add_argument("--no-sandbox")

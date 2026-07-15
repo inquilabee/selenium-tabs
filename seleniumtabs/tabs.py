@@ -68,10 +68,10 @@ class Tab:
     __repr__ = __str__
 
     def __getattribute__(self, item):
-        with contextlib.suppress(Exception):
+        try:
             return super().__getattribute__(item)
-
-        return getattr(self.driver, item)
+        except AttributeError:
+            return getattr(self.driver, item)
 
     def __del__(self):
         self.close()
@@ -315,7 +315,10 @@ class Tab:
 
     @staticmethod
     def element_center(element):
-        pass
+        return {
+            "x": element.location["x"] + element.size["width"] / 2,
+            "y": element.location["y"] + element.size["height"] / 2,
+        }
 
     def run_js(self, script: str, *args) -> Any:
         """Run JavaScript on the page"""
