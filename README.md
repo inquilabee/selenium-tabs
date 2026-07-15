@@ -2,11 +2,11 @@
 
 A Python library that makes browser automation with Selenium more intuitive by providing a tab-centric interface. Manage multiple browser tabs with ease, perform common operations, and interact with web elements using a clean, Pythonic API.
 
----
+______________________________________________________________________
 
 And guess what! You don't need to manually download drivers for the browser—it's all taken care of by the library. Install and start right away.
 
-**Note:** All testing has been done on Chrome.
+**Note:** Local automated tests are designed for Chrome and run headless when Chrome is available.
 
 ## 🚀 Top Features
 
@@ -22,15 +22,35 @@ And guess what! You don't need to manually download drivers for the browser—it
 pip install seleniumtabs
 ```
 
-Or with Poetry:
+For local development with `uv`:
+
 ```bash
-poetry add seleniumtabs
+git clone https://github.com/inquilabee/selenium-tabs.git
+cd selenium-tabs
+uv sync --all-groups
 ```
 
 ## 📋 Requirements
 
 - Python 3.13+
 - Chrome or Firefox browser
+
+## 🛠️ Development
+
+This project uses `uv` and PEP 621 package metadata in `pyproject.toml`.
+
+```bash
+make sync          # install runtime and development dependencies
+make test          # run the default deterministic test suite
+make integration   # run live browser/network tests
+make check-commit  # run the fast local quality gate
+make lint          # run all pre-commit hooks
+make build         # build wheel and sdist
+```
+
+Default tests use local HTML fixtures from `tests/fixtures/pages/` and exclude `integration` tests. Live-site tests are marked with `@pytest.mark.integration` because they require Chrome, network access, and external websites that may change.
+
+Before publishing, configure PyPI Trusted Publishing for this GitHub repository, the publish workflow, and the `pypi` environment. Releases build with `uv build` and publish with `uv publish` from GitHub Actions.
 
 ## 🚀 Quick Start
 
@@ -59,6 +79,7 @@ with Browser(name="Chrome", implicit_wait=10) as browser:
 ## ✨ Key Features
 
 ### 1. Tab Management
+
 ```python
 with Browser(name="Chrome") as browser:
     # Open tabs
@@ -76,6 +97,7 @@ with Browser(name="Chrome") as browser:
 ```
 
 ### 2. Element Selection
+
 ```python
 with Browser(name="Chrome") as browser:
     tab = browser.open("https://example.com")
@@ -95,6 +117,7 @@ with Browser(name="Chrome") as browser:
 ```
 
 ### 3. Page Interaction
+
 ```python
 with Browser(name="Chrome") as browser:
     tab = browser.open("https://example.com")
@@ -114,6 +137,7 @@ with Browser(name="Chrome") as browser:
 ```
 
 ### 4. Advanced Features
+
 ```python
 with Browser(name="Chrome") as browser:
     tab = browser.open("https://example.com")
@@ -138,7 +162,9 @@ with Browser(name="Chrome") as browser:
 ### Direct Driver Access
 
 - If a feature is not directly available in the `Tab` object, you can access the underlying Selenium WebDriver directly via `tab.driver`.
+
 - **Example:**
+
   ```python
   # Access driver methods directly
   tab.driver.execute_script("return document.title")
@@ -156,13 +182,14 @@ with Browser(name="Chrome") as browser:
   - Interacting with elements (e.g., click, scroll).
 
 **Example:**
+
 ```python
 jq_elements = tab.jq("div.class-name")
 for el in jq_elements:
     print(el.text)
 ```
 
----
+______________________________________________________________________
 
 ### PyQuery Integration
 
@@ -175,6 +202,7 @@ for el in jq_elements:
   - Integration with real-world pages (e.g., Yahoo).
 
 **Example:**
+
 ```python
 pq = tab.pyquery
 for link in pq("nav a").items():
@@ -182,7 +210,7 @@ for link in pq("nav a").items():
 print(pq("title").text())
 ```
 
----
+______________________________________________________________________
 
 ## 🔍 Browser Options
 
@@ -197,7 +225,6 @@ with Browser(
     # Your code here
 ```
 
-
 ## ✅ Tested Features
 
 This library is thoroughly tested for:
@@ -210,7 +237,7 @@ This library is thoroughly tested for:
 - **Task Scheduling**: Periodic tab actions (e.g., auto-refresh).
 - **Integration with jQuery and PyQuery** (see below).
 
----
+______________________________________________________________________
 
 ## 🤝 Contributing
 

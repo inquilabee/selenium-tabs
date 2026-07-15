@@ -1,36 +1,43 @@
-commit:
-	git add .
-	pre-commit
-	git status
+sync:
+	uv sync --all-groups
+
+test:
+	uv run pytest -q
+
+integration:
+	uv run pytest -m integration -q
+
+coverage:
+	uv run pytest --cov=seleniumtabs --cov-report=term-missing
+
+format:
+	uv run ruff format .
+
+ruff:
+	uv run ruff check . --fix
+
+security:
+	uv run bandit -c bandit.yaml -r seleniumtabs
+
+lint:
+	uv run pre-commit run --all-files
+
+check-commit:
+	uv run ruff format --check .
+	uv run ruff check .
+	uv run pytest -q
+	uv run bandit -c bandit.yaml -r seleniumtabs
+
+build:
+	uv build
+
+publish-check: build
+	uv run python -m zipfile --test dist/*.whl
+
+install-hooks:
+	uv run pre-commit install
 
 pcupdate:
-	pre-commit autoupdate
+	uv run pre-commit autoupdate
 
-publish:
-	# Check current version on PyPi
-	@echo "Checking current version on PyPI..."
-	@poetry show seleniumtabs
-
-	# Update version in pyproject.toml
-	@echo "Updating version in pyproject.toml..."
-	@poetry version
-	@read -p "Enter new version (e.g. 1.0.1): " version; \
-	poetry version $$version
-
-	# Run pytest
-	@echo "Running tests..."
-	@poetry run pytest tests/ -v
-
-	# Commit
-	@echo "Committing changes..."
-	@git add pyproject.toml
-	@git commit -m "Bump version to $$version"
-	@git tag -a "v$$version" -m "Version $$version"
-	@git push origin main --tags
-
-	# Build and publish
-	@echo "Building and publishing package..."
-	@poetry build
-	@poetry publish
-
-	@echo "Publish complete! Version $$version has been published to PyPI."
+.PHONY: build check-commit coverage format install-hooks integration lint pcupdate publish-check ruff security sync test

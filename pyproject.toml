@@ -1,184 +1,134 @@
-[tool.black]
-line-length = 120
-target-version = ['py312']
-include = '\.pyi?$'
-exclude = '''
-/(
-  \.toml
-  |\.sh
-  |\.git
-  |\.ini
-  |\.tox
-  |Dockerfile
-  |Jenkinfile
-  | _build
-  | dist
-  | .venv
-)/
-'''
+[build-system]
+requires = ["setuptools>=80.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
-# ==== isort ====
-[tool.isort]
-profile = "black"
-line_length = 120
-known_first_party = ["config", "apps"]
-skip = []
-skip_glob = []
-
-[tool.poetry]
+[project]
 name = "seleniumtabs"
 version = "2.1.1"
-packages = [{ include = "seleniumtabs" }]
 description = "Selenium with tab management in Python"
-authors = ["Vishal Kumar Mishra <vishal.k.mishra2@gmail.com>"]
-license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/TheConfused/selenium-tabs"
-repository = "https://github.com/TheConfused/selenium-tabs"
-keywords = [
-  "selenium tabs",
-  "selenium python",
-  "selenium python automation",
-  "python automation",
+requires-python = ">=3.13,<4.0"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+  { name = "Vishal Kumar Mishra", email = "vishal.k.mishra2@gmail.com" },
 ]
-include = ["LICENSE"]
+keywords = [
+  "browser-automation",
+  "python-automation",
+  "selenium",
+  "selenium-python",
+  "selenium-tabs",
+  "tab-management",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Testing",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "browserjquery>=2.0.1,<3.0.0",
+  "django-environ>=0.11.2",
+  "fake-useragent>=2.2.0,<3.0.0",
+  "pyquery>=2.0.0",
+  "python-dotenv>=1.0.0",
+  "pyyaml>=6.0.1",
+  "schedule>=1.2.2",
+  "selenium>=4.12.0",
+  "tldextract>=5.1.2,<6.0.0",
+  "webdriver-manager>=4.0.2",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.13,<4.0"
-selenium = ">=4.12.0"
-django-environ = ">=0.11.2"
-python-dotenv = ">=1.0.0"
-PyYAML = ">=6.0.1"
-pyquery = ">=2.0.0"
-browserjquery = "^2.0.1"
-fake-useragent = "^2.2.0"
-tldextract = "^5.1.2"
-webdriver-manager = ">=4.0.2"
-schedule = ">=1.2.2"
-pytest-cov = "^6.2.1"
+[project.urls]
+Homepage = "https://github.com/inquilabee/selenium-tabs"
+Repository = "https://github.com/inquilabee/selenium-tabs"
+Issues = "https://github.com/inquilabee/selenium-tabs/issues"
+Changelog = "https://github.com/inquilabee/selenium-tabs/blob/main/CHANGELOG.md"
 
+[dependency-groups]
+dev = [
+  "bandit>=1.9.4",
+  "codespell>=2.4.2",
+  "mdformat>=0.7.22",
+  "mypy>=1.18.0",
+  "pre-commit>=4.6.0",
+  "pytest>=8.4.0",
+  "pytest-cov>=7.0.0",
+  "ruff>=0.11.13,<0.12.0",
+]
 
-[tool.poetry.dev-dependencies]
-pytest = "^8.4.0"
-tox = "^4.26.0"
-black = "^25.1.0"
-ruff = "^0.11.13"
-sourcery = "^1.8.0"
-mypy = "^1.5.1"
-bandit = "^1.7.5"
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["seleniumtabs*"]
+exclude = ["tests*"]
 
-[tool.poetry.group.dev.dependencies]
-pre-commit = "^4.2.0"
+[tool.setuptools.package-data]
+seleniumtabs = ["log_config/*.yaml"]
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-
-# ==== pytest ====
 [tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--ds=settings"
-python_files = ["tests.py", "test_*.py"]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+addopts = [
+  "-m",
+  "not integration",
+  "--strict-config",
+  "--strict-markers",
+]
+filterwarnings = [
+  "error",
+]
+markers = [
+  "integration: tests that require a live browser, external websites, or network access",
+]
 
-# ==== mypy ====
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 check_untyped_defs = true
 ignore_missing_imports = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_unused_configs = true
 
-
 [tool.ruff]
-# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-select = ["E", "F"]
-ignore = []
-
-# Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = [
-  "A",
-  "B",
-  "C",
-  "D",
-  "E",
-  "F",
-  "G",
-  "I",
-  "N",
-  "Q",
-  "S",
-  "T",
-  "W",
-  "ANN",
-  "ARG",
-  "BLE",
-  "COM",
-  "DJ",
-  "DTZ",
-  "EM",
-  "ERA",
-  "EXE",
-  "FBT",
-  "ICN",
-  "INP",
-  "ISC",
-  "NPY",
-  "PD",
-  "PGH",
-  "PIE",
-  "PL",
-  "PT",
-  "PTH",
-  "PYI",
-  "RET",
-  "RSE",
-  "RUF",
-  "SIM",
-  "SLF",
-  "TCH",
-  "TID",
-  "TRY",
-  "UP",
-  "YTT",
-]
-unfixable = []
-
-# Exclude a variety of commonly ignored directories.
-exclude = [
-  ".bzr",
-  ".direnv",
-  ".eggs",
-  ".git",
-  ".git-rewrite",
-  ".hg",
-  ".mypy_cache",
-  ".nox",
-  ".pants.d",
-  ".pytype",
-  ".ruff_cache",
-  ".svn",
-  ".tox",
-  ".venv",
-  "__pypackages__",
-  "_build",
-  "buck-out",
-  "build",
-  "dist",
-  "node_modules",
-  "venv",
-]
-
 line-length = 120
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-target-version = "py312"
+target-version = "py313"
 
-[tool.ruff.mccabe]
-# Unlike Flake8, default to a complexity level of 10.
+[tool.ruff.lint]
+select = ["B", "C4", "C901", "E", "F", "I", "UP"]
+ignore = [
+  "E501", # line length is enforced by formatter where practical
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["seleniumtabs"]
+
+[tool.ruff.lint.mccabe]
 max-complexity = 10
 
 [tool.bandit]
-exclude_dirs = [".tox"]
-# tests = ["B201", "B301"]
-skips = ["B113"]
+exclude_dirs = [".venv", "build", "dist", "tests"]
+skips = [
+  "B101", # asserts document tab/session invariants in this library
+  "B113", # retained for compatibility with tools that may inspect requests-like patterns
+  "B311", # random waits/clicks intentionally simulate human browser interaction
+]
+
+[tool.codespell]
+skip = "*.lock,uv.lock,.venv,build,dist"
+ignore-words-list = "imporvements"
+
+[tool.coverage.run]
+branch = true
+source = ["seleniumtabs"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+fail_under = 45
+precision = 1
+show_missing = true

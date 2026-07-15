@@ -1,95 +1,43 @@
-# Test Coverage Documentation
+# Test Coverage
 
-## Overview
-This document outlines the current test coverage for the `Tab` class in the `seleniumtabs` package. It identifies which functionalities are currently tested and which areas need additional test coverage.
+## Strategy
 
-## Currently Tested Functionalities
+The default test suite must be deterministic. Tests under `tests/` use local HTML fixtures served from `tests/fixtures/pages/` and are selected by:
 
-### Basic Tab Operations
-- Opening new tabs
-- Closing tabs
-- Switching between tabs
-- Tab state management (active/alive)
+```bash
+make test
+```
 
-### Scrolling Operations
-- Basic scrolling
-- Scroll up/down
-- Scroll to bottom
-- Infinite scroll
+Live browser and external-website tests are kept under `tests/integration/` and marked with `@pytest.mark.integration`. Run them only when Chrome, network access, and live site stability are part of the acceptance criteria:
 
-### Tab Properties
-- Title
-- URL
-- Active state
-- Alive state
-- Page source
+```bash
+make integration
+```
 
-## Areas Needing Test Coverage
+## Covered in the Default Suite
 
-### 1. CSS Selector Methods
-- `css()` method
-- `SelectableCSS` functionality
+- `Session` cleanup is idempotent when driver initialization fails.
+- `Browser` can open, switch, query, and close local tabs.
+- `Tab.css()` and chained `SelectableCSS.css()` work against stable local markup.
+- `Tab.find_element()`, `get_attribute()`, `run_js()`, and `pyquery` work on local fixtures.
+- Scroll helpers run against a tall local page.
+- Scheduled tab tasks execute and can be cancelled.
 
-### 2. JavaScript Operations
-- `run_js()` method
-- `get_all_attributes_of_element()`
-- `get_attribute()`
+Browser-dependent default tests skip with a clear reason when Chrome or a driver is unavailable. Pure tests should still run in that environment.
 
-### 3. Element Interaction Methods
-- `click()` and `_click_on_random_position()`
-- `empty_click()`
-- `element_source()`
-- `element_location()`
-- `element_size()`
-- `element_center()`
+## Integration Coverage
 
-### 4. Element Finding and Waiting
-- `find_element()`
-- `wait_for_presence_of_element()`
-- `wait_for_visibility_of_element()`
-- `wait_for_presence_and_visibility_of_element()`
-- `wait_for_presence()`
-- `wait_for_visibility()`
-- `wait_for_presence_and_visibility()`
-- `wait_for_body_tag_presence_and_visibility()`
-- `wait_until_staleness()`
-- `wait_for_url()`
+Integration tests preserve live checks for:
 
-### 5. jQuery/PyQuery Integration
-- `jquery` and `jq` properties
-- `pyquery` and `pq` properties
-- `page_html` property
+- Google/Yahoo/Bing/DuckDuckGo tab workflows.
+- Yahoo selector and PyQuery behavior.
+- `time.is` task scheduling behavior.
 
-### 6. Task Scheduling
-- `schedule_task()` method
+These tests are intentionally excluded from the default gate because live websites change without warning.
 
-### 7. Page State Methods
-- `has_page_loaded()`
-- `wait_for_loading()`
+## Next Priorities
 
-### 8. URL and Domain Operations
-- `domain` property
-- `wait_for_url()`
-
-## Test Implementation Priority
-
-1. **High Priority**
-   - CSS Selector methods (core functionality)
-   - Element interaction methods (critical for automation)
-   - Element finding and waiting (essential for reliable tests)
-
-2. **Medium Priority**
-   - JavaScript operations
-   - jQuery/PyQuery integration
-   - Page state methods
-
-3. **Lower Priority**
-   - Task scheduling
-   - URL and domain operations
-
-## Notes
-- Current tests are primarily focused on basic tab operations and scrolling
-- Many core functionalities remain untested
-- Test implementation should follow the priority order to ensure critical features are covered first
-- Each new test should include both positive and negative test cases
-- Edge cases should be considered for each functionality 
+1. Add pure unit tests for URL parsing, wait-duration calculation, and scheduler validation.
+1. Add local-fixture tests for wait helpers, staleness, invisibility, and URL waits.
+1. Add local-fixture tests for click fallbacks and element geometry helpers.
+1. Increase coverage threshold after the above tests land.

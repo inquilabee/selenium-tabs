@@ -1,0 +1,22 @@
+---
+description: Quality gates and testing policy for Selenium Tabs
+alwaysApply: true
+---
+
+# Quality Gates
+
+Lint, security, build, and test failures are defects. Fix them on the branch; do not bypass hooks.
+
+Use these gates:
+- `make test`: default deterministic suite, excludes `integration`.
+- `make integration`: live browser/network tests.
+- `make check-commit`: fast local gate before commit.
+- `make lint`: full pre-commit run.
+- `make build`: build wheel and sdist with `uv`.
+
+Rules:
+- Never use `git commit --no-verify` or skip pre-commit hooks.
+- Default tests must not depend on Google, Yahoo, time.is, or other live websites.
+- Mark external-site/browser-network checks with `@pytest.mark.integration`.
+- If Chrome or a driver is unavailable locally, tests may skip with a clear reason; CI should still run package checks and pure tests.
+- Before claiming work is complete, run the relevant fresh commands and report actual results.

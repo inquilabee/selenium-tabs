@@ -1,33 +1,39 @@
-name: Build and publish Python package
+name: CI
+
 on:
-  release:
-    types: [published]
+  pull_request:
+  push:
+    branches:
+      - main
+
 jobs:
-  publish:
+  quality:
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/seleniumtabs
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
+
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+
       - name: Install Python
         run: uv python install 3.13
+
       - name: Install dependencies
         run: uv sync --all-groups --python 3.13
+
       - name: Check formatting
         run: uv run ruff format --check .
+
       - name: Lint
         run: uv run ruff check .
+
       - name: Test
         run: uv run pytest -q
+
       - name: Security scan
         run: uv run bandit -c bandit.yaml -r seleniumtabs
+
       - name: Build distributions
         run: uv build
-      - name: Publish to PyPI
-        run: uv publish --trusted-publishing always
