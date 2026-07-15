@@ -3,7 +3,7 @@ import logging
 import random
 import time
 from collections import OrderedDict
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from threading import Lock
 from typing import Any
 
@@ -21,7 +21,8 @@ from seleniumtabs.browser_management import browser_sessions
 from seleniumtabs.css_selectors import SelectableCSS
 from seleniumtabs.exceptions import SeleniumOpenTabException, SeleniumRequestException
 from seleniumtabs.js_scripts import scripts
-from seleniumtabs.schedule_tasks import task_scheduler
+from seleniumtabs.schedule_tasks import BrowserTaskScheduler
+from seleniumtabs.schedule_tasks import task_scheduler as default_task_scheduler
 from seleniumtabs.session import Session
 from seleniumtabs.utils.urls import get_domain
 from seleniumtabs.wait import humanized_wait
@@ -36,11 +37,21 @@ class Tab:
 
     SCROLL_DIST = 50
 
-    def __init__(self, session: Session, tab_handle, start_url: str | None = None, full_screen: bool = True):
+    def __init__(
+        self,
+        session: Session,
+        tab_handle,
+        start_url: str | None = None,
+        full_screen: bool = True,
+        task_scheduler: BrowserTaskScheduler | None = None,
+        close_tab: Callable[["Tab"], bool | None] | None = None,
+    ):
         self._session = session
         self.tab_handle = tab_handle
         self.start_url = start_url
         self.full_screen = full_screen
+        self._task_scheduler = task_scheduler or default_task_scheduler
+        self._close_tab = close_tab
 
     @property
     def driver(self) -> webdriver.Chrome | webdriver.Firefox:
@@ -74,7 +85,8 @@ class Tab:
             return getattr(self.driver, item)
 
     def __del__(self):
-        self.close()
+        with contextlib.suppress(Exception):
+            self.close()
 
     def __hash__(self):
         return hash(self.tab_handle)
@@ -237,7 +249,13 @@ class Tab:
         raise SeleniumOpenTabException(f"Could not open {url} - neither full nor partial load succeeded")
 
     def close(self):
-        browser_sessions.close_tab(self)
+        if self._close_tab:
+            return self._close_tab(self)
+
+        if browser := browser_sessions.get_browser_for_tab(self):
+            return browser.close_tab(self)
+
+        raise SeleniumRequestException("Tab is not owned by an active Browser.")
 
     def click(self, element: webelement.WebElement) -> bool:
         """Click a given element on the page represented by the tab"""
@@ -535,7 +553,7 @@ class Tab:
         return self.pyquery
 
     def schedule_task(self, task, period: int, *args, **kwargs):
-        task_scheduler.schedule_task(self, task, period, *args, **kwargs)
+        self._task_scheduler.schedule_task(self, task, period, *args, **kwargs)
 
 
 class TabManager:
@@ -548,9 +566,16 @@ class TabManager:
     - Handling tab operations (open, close, switch)
     """
 
-    def __init__(self, session: Session):
+    def __init__(
+        self,
+        session: Session,
+        task_scheduler: BrowserTaskScheduler | None = None,
+        close_tab: Callable[[Tab], bool | None] | None = None,
+    ):
         self._session = session
         self._all_tabs = OrderedDict()
+        self._task_scheduler = task_scheduler or default_task_scheduler
+        self._close_tab = close_tab
 
     def __iter__(self) -> Iterator[Tab]:
         """Make TabManager iterable by yielding tab values"""
@@ -628,7 +653,13 @@ class TabManager:
     def create(self, tab_handle, full_screen: bool = True) -> Tab:
         """Create a Tab object"""
 
-        tab = Tab(session=self._session, tab_handle=tab_handle, full_screen=full_screen)
+        tab = Tab(
+            session=self._session,
+            tab_handle=tab_handle,
+            full_screen=full_screen,
+            task_scheduler=self._task_scheduler,
+            close_tab=self._close_tab,
+        )
         self.add(tab)
         return tab
 
@@ -693,7 +724,7 @@ class TabManager:
         curr_tab = self.current_tab()
         curr_tabs = set(self._all_tabs)
         tabs = [
-            Tab(session=self._session, tab_handle=handle)
+            Tab(session=self._session, tab_handle=handle, task_scheduler=self._task_scheduler)
             for handle in self._session.window_handles
             if handle not in curr_tabs
         ]

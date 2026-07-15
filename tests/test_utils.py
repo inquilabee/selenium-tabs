@@ -1,3 +1,7 @@
+import importlib
+import logging
+import sys
+
 import pytest
 from selenium.webdriver.common.by import By
 
@@ -63,3 +67,32 @@ def test_find_parent_element_uses_parent_xpath():
             return "parent"
 
     assert core.find_parent_element(Element()) == "parent"
+
+
+def test_importing_settings_does_not_configure_logging_or_create_logs_dir(tmp_path, monkeypatch):
+    root_logger = logging.getLogger()
+    original_handlers = list(root_logger.handlers)
+    original_level = root_logger.level
+    previous_settings = sys.modules.pop("seleniumtabs.settings", None)
+
+    for handler in original_handlers:
+        root_logger.removeHandler(handler)
+
+    monkeypatch.chdir(tmp_path)
+
+    try:
+        importlib.import_module("seleniumtabs.settings")
+
+        assert root_logger.handlers == []
+        assert not (tmp_path / "logs").exists()
+    finally:
+        sys.modules.pop("seleniumtabs.settings", None)
+        if previous_settings is not None:
+            sys.modules["seleniumtabs.settings"] = previous_settings
+
+        for handler in list(root_logger.handlers):
+            root_logger.removeHandler(handler)
+            handler.close()
+        for handler in original_handlers:
+            root_logger.addHandler(handler)
+        root_logger.setLevel(original_level)

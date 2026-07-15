@@ -23,6 +23,7 @@ class BrowserTaskScheduler:
 
     def __init__(self):
         """Initialize the task scheduler"""
+        self._schedule = schedule.Scheduler()
         self._tasks = {}  # Store task references for cancellation
         self._tab_tasks = {}  # Store tasks by tab for easy lookup
         self._running = False
@@ -58,14 +59,14 @@ class BrowserTaskScheduler:
             return wrapper
 
         # Schedule the task and store its reference
-        job = schedule.every(period).seconds.do(task_decorator(task_func), tab, *args, **kwargs)
-        self._tasks[task_func.__name__] = job
+        job = self._schedule.every(period).seconds.do(task_decorator(task_func), tab, *args, **kwargs)
+        self._tasks.setdefault(task_func.__name__, []).append(job)
         self._task_status[task_func.__name__] = True  # Mark task as running
 
         # Store task by tab for easy lookup
         if tab not in self._tab_tasks:
             self._tab_tasks[tab] = []
-        self._tab_tasks[tab].append(task_func.__name__)
+        self._tab_tasks[tab].append((task_func.__name__, job))
 
         logger.info(f"Scheduled task {task_func.__name__} to run every {period} seconds")
 
@@ -79,14 +80,17 @@ class BrowserTaskScheduler:
             bool: True if task was cancelled, False if task not found
         """
         if task_name in self._tasks:
-            schedule.cancel_job(self._tasks[task_name])
-            del self._tasks[task_name]
+            for job in self._tasks.pop(task_name):
+                self._schedule.cancel_job(job)
             self._task_status[task_name] = False  # Mark task as not running
 
             # Remove task from tab_tasks
-            for tab_tasks in self._tab_tasks.values():
-                if task_name in tab_tasks:
-                    tab_tasks.remove(task_name)
+            for tab, tab_tasks in list(self._tab_tasks.items()):
+                remaining_tasks = [(name, job) for name, job in tab_tasks if name != task_name]
+                if remaining_tasks:
+                    self._tab_tasks[tab] = remaining_tasks
+                else:
+                    del self._tab_tasks[tab]
 
             logger.info(f"Cancelled task {task_name}")
             return True
@@ -110,14 +114,26 @@ class BrowserTaskScheduler:
             tab: The tab whose tasks should be cancelled
         """
         if tab in self._tab_tasks:
-            for task_name in self._tab_tasks[tab]:
-                self.cancel_task(task_name)
+            for task_name, job in list(self._tab_tasks[tab]):
+                self._schedule.cancel_job(job)
+                task_jobs = self._tasks.get(task_name, [])
+                if job in task_jobs:
+                    task_jobs.remove(job)
+
+                if task_jobs:
+                    self._task_status[task_name] = True
+                else:
+                    self._tasks.pop(task_name, None)
+                    self._task_status[task_name] = False
+
             del self._tab_tasks[tab]
             logger.info(f"Cancelled all tasks for tab {tab}")
 
     def cancel_all_tasks(self) -> None:
         """Cancel all scheduled tasks."""
-        schedule.clear()
+        for task_jobs in list(self._tasks.values()):
+            for job in task_jobs:
+                self._schedule.cancel_job(job)
         self._tasks.clear()
         self._tab_tasks.clear()
         self._task_status.clear()  # Clear all task statuses
@@ -145,7 +161,7 @@ class BrowserTaskScheduler:
             while self._running:
                 try:
                     # Check if any tabs are no longer alive and cancel their tasks
-                    schedule.run_pending()
+                    self._schedule.run_pending()
                 except Exception as e:
                     logger.error(f"Error during task execution: {str(e)}")
                     # Don't re-raise the exception - just log it and continue
