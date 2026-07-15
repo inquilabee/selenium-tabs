@@ -11,4 +11,4 @@ def find_elements_by_text(element: webelement.WebElement, text):
 
 
 def find_parent_element(element: webelement.WebElement):
-    return element.find_element(by=By.XPATH, value="..']")
+    return element.find_element(by=By.XPATH, value="..")

@@ -24,6 +24,7 @@ class Browser:
         user_agent: str | None = None,
         headless: bool = False,
         full_screen: bool = True,
+        page_load_timeout: int = 60,
     ):
         logger.info(f"Initializing Browser with name: {name}")
         self.name = name
@@ -35,6 +36,7 @@ class Browser:
             implicit_wait=implicit_wait,
             user_agent=user_agent,
             full_screen=full_screen,
+            page_load_timeout=page_load_timeout,
         )
         logger.info("Session created successfully")
 

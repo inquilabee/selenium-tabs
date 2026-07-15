@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Iterator
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -42,6 +43,9 @@ def browser() -> Iterator[Browser]:
         with Browser(name="Chrome", implicit_wait=3, headless=True, full_screen=False) as browser:
             yield browser
     except Exception as exc:
-        pytest.skip(f"Chrome browser unavailable for Selenium tests: {exc}")
+        message = f"Chrome browser unavailable for Selenium tests: {exc}"
+        if os.environ.get("SELENIUMTABS_FAIL_BROWSER_SKIP") == "1":
+            pytest.fail(message)
+        pytest.skip(message)
     finally:
         task_scheduler.cancel_all_tasks()
