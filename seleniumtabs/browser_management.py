@@ -10,10 +10,15 @@ class BrowserSessions:
 
     def close_tab(self, tab):
         if browser := self.get_browser_for_tab(tab):
-            browser.close_tab(tab)
+            return browser.close_tab(tab)
+
+        return None
 
     def add_browser(self, br):
         self.browser_sessions.append(br)
+
+    def remove_browser(self, br):
+        self.browser_sessions = [browser for browser in self.browser_sessions if browser != br]
 
 
 browser_sessions = BrowserSessions()

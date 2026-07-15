@@ -42,6 +42,3 @@ def setup_logging(path: str | Path = BASE_DIR / LOG_CONF_FILE, default_level: in
     else:
         logging.basicConfig(level=default_level)
         logging.warning(f"Logging config file not found at {path}. Using basic config.")
-
-
-setup_logging()

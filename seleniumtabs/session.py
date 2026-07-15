@@ -1,4 +1,7 @@
+import contextlib
 import logging
+from collections.abc import Callable
+from typing import Any
 
 from fake_useragent import UserAgent
 from selenium import webdriver
@@ -47,11 +50,16 @@ class Session:
         headless: bool = False,
         full_screen: bool = True,
         page_load_timeout: int = 60,
+        *,
+        driver_factory: Callable[[Any], webdriver.Chrome | webdriver.Firefox] | None = None,
+        options_factory: Callable[[str], Any] | None = None,
     ):
         self.browser = browser_name
 
         self.implicit_wait = implicit_wait
         self.page_load_timeout = page_load_timeout
+        self._driver_factory = driver_factory
+        self._options_factory = options_factory
 
         self.user_agent = user_agent or self.USER_AGENT_FUNCTIONS[self.browser].random
         self.headless = headless
@@ -76,13 +84,17 @@ class Session:
         """returns the driver/browser instance based on set variables and arguments"""
 
         driver_options = self._get_driver_options()
-        driver_func = self.BROWSER_DRIVER_FUNCTION[self.browser]
-        driver_service = self.BROWSER_DRIVER_SERVICE_FUNCTION[self.browser]
-        driver_manager = self.BROWSER_DRIVER_MANAGER_FUNCTION[self.browser]
 
-        driver: webdriver.Firefox | webdriver.Chrome = driver_func(
-            options=driver_options, service=driver_service(executable_path=driver_manager().install())
-        )
+        if self._driver_factory:
+            driver: webdriver.Firefox | webdriver.Chrome = self._driver_factory(driver_options)
+        else:
+            driver_func = self.BROWSER_DRIVER_FUNCTION[self.browser]
+            driver_service = self.BROWSER_DRIVER_SERVICE_FUNCTION[self.browser]
+            driver_manager = self.BROWSER_DRIVER_MANAGER_FUNCTION[self.browser]
+
+            driver = driver_func(
+                options=driver_options, service=driver_service(executable_path=driver_manager().install())
+            )
 
         driver.implicitly_wait(self.implicit_wait)
 
@@ -92,6 +104,9 @@ class Session:
         return driver
 
     def _get_driver_options(self):
+        if self._options_factory:
+            return self._options_factory(self.browser)
+
         driver_options = self.BROWSER_OPTION_FUNCTION[self.browser]()
 
         if self.headless:
@@ -167,7 +182,8 @@ class Session:
             self._driver = None
 
     def __del__(self) -> None:
-        self.close()
+        with contextlib.suppress(Exception):
+            self.close()
 
     def _log_session_info(self) -> None:
         """Log information about the browser session."""

@@ -1,8 +1,11 @@
+import contextlib
 import logging
+from collections.abc import Callable
+from typing import Any
 
 from seleniumtabs.browser_management import browser_sessions
 from seleniumtabs.exceptions import SeleniumRequestException
-from seleniumtabs.schedule_tasks import BrowserTaskScheduler, task_scheduler
+from seleniumtabs.schedule_tasks import BrowserTaskScheduler
 from seleniumtabs.session import Session
 from seleniumtabs.tabs import Tab, TabManager
 from seleniumtabs.wait import humanized_wait
@@ -25,22 +28,36 @@ class Browser:
         headless: bool = False,
         full_screen: bool = True,
         page_load_timeout: int = 60,
+        *,
+        driver_factory: Callable[[Any], Any] | None = None,
+        options_factory: Callable[[str], Any] | None = None,
     ):
         logger.info(f"Initializing Browser with name: {name}")
         self.name = name
+        self._closed = False
 
         logger.info("Creating new Session")
-        self._session = Session(
-            name,
-            headless=headless,
-            implicit_wait=implicit_wait,
-            user_agent=user_agent,
-            full_screen=full_screen,
-            page_load_timeout=page_load_timeout,
-        )
+        session_kwargs: dict[str, Any] = {
+            "implicit_wait": implicit_wait,
+            "user_agent": user_agent,
+            "headless": headless,
+            "full_screen": full_screen,
+            "page_load_timeout": page_load_timeout,
+        }
+        if driver_factory is not None:
+            session_kwargs["driver_factory"] = driver_factory
+        if options_factory is not None:
+            session_kwargs["options_factory"] = options_factory
+
+        self._session = Session(name, **session_kwargs)
         logger.info("Session created successfully")
 
-        self._manager: TabManager = TabManager(self._session)
+        self._task_scheduler = BrowserTaskScheduler()
+        self._manager: TabManager = TabManager(
+            self._session,
+            task_scheduler=self._task_scheduler,
+            close_tab=self.close_tab,
+        )
         self.full_screen = full_screen
 
         browser_sessions.add_browser(self)
@@ -56,7 +73,8 @@ class Browser:
 
     def __del__(self) -> None:
         """Destructor to ensure browser cleanup when object is garbage collected"""
-        self.close()
+        with contextlib.suppress(Exception):
+            self.close()
 
     @property
     def tabs(self) -> list[Tab]:
@@ -115,7 +133,7 @@ class Browser:
         """
         if self._manager.exist(tab):
             # Cancel any tasks scheduled for this tab
-            task_scheduler.cancel_tab_tasks(tab)
+            self._task_scheduler.cancel_tab_tasks(tab)
 
             tab.switch()
             self._remove_tab(tab=tab)
@@ -135,16 +153,20 @@ class Browser:
         4. Keeps the browser session active
         """
         # Cancel any scheduled tasks first
-        task_scheduler.cancel_all_tasks()
+        self._task_scheduler.cancel_all_tasks()
 
         for tab in self.tabs:
             tab.close()
 
     def close(self) -> None:
         """Close the browser and clean up all resources"""
+        if getattr(self, "_closed", False):
+            return
+
         try:
             # Cancel any scheduled tasks first
-            task_scheduler.cancel_all_tasks()
+            if hasattr(self, "_task_scheduler"):
+                self._task_scheduler.cancel_all_tasks()
 
             # Close all tabs and clear the manager
             if hasattr(self, "_manager"):
@@ -153,13 +175,12 @@ class Browser:
             # Close the session
             if hasattr(self, "_session"):
                 self._session.close()
-
-            # Remove from browser sessions
+        finally:
+            # Keep the registry from retaining failed or partially closed browsers.
             if hasattr(self, "name"):
-                browser_sessions.browser_sessions = [b for b in browser_sessions.browser_sessions if b != self]
+                browser_sessions.remove_browser(self)
 
-        except Exception:
-            raise
+        self._closed = True
 
     def __contains__(self, item: Tab) -> bool:
         """Check if a tab exists in the browser"""
@@ -192,7 +213,7 @@ class Browser:
 
     @property
     def task_scheduler(self) -> BrowserTaskScheduler:
-        return task_scheduler
+        return self._task_scheduler
 
     def execute_task(self, max_time: int | None = None, sleep_time: float = 1.0) -> None:
         """Execute scheduled tasks.
