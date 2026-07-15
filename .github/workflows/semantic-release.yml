@@ -1,10 +1,8 @@
 name: Semantic Release
-
 on:
   push:
     branches:
       - main
-
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -12,13 +10,11 @@ jobs:
     permissions:
       id-token: write
       contents: write
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Python Semantic Release
-        uses: python-semantic-release/python-semantic-release@master
+        uses: python-semantic-release/python-semantic-release@v10
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

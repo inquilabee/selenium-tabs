@@ -1,0 +1,24 @@
+---
+description: Python standards for Selenium Tabs
+alwaysApply: true
+---
+
+# Python
+
+Target Python 3.13+ and use `uv run` for Python commands.
+
+Style:
+- Use Ruff as the formatter and linter. Line length is 120.
+- Imports are stdlib, third-party, then local. No wildcard imports.
+- Prefer built-in generics: `list[str]`, `dict[str, str]`, `str | None`.
+- Add or preserve type hints on public APIs when touching a function.
+
+Selenium patterns:
+- Make browser/session cleanup idempotent; destructors must never raise.
+- Validate state at API boundaries and raise explicit package exceptions when practical.
+- Do not hide Selenium failures with broad fallbacks unless the public API intentionally returns `False` or `None`.
+- Avoid new module-level mutable state. The existing global scheduler/session registry should not spread to new modules.
+
+Testing:
+- Write regression tests for bug fixes before changing production code.
+- For browser behavior, prefer local HTML fixtures served from `tests/fixtures/pages/`.

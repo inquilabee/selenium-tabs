@@ -22,15 +22,11 @@ lint:
   enabled:
     - actionlint@1.7.4
     - bandit@1.7.10
-    - black@24.10.0
     - checkov@3.2.296
-    - flake8@7.1.1
     - git-diff-check
-    - isort@5.13.2
     - markdownlint@0.42.0
-    - mypy@1.13.0
     - osv-scanner@1.9.1
-    - ruff@0.7.3
+    - ruff@0.11.13
     - shellcheck@0.10.0
     - shfmt@3.6.0
     - taplo@0.9.3

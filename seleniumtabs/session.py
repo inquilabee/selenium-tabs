@@ -67,7 +67,9 @@ class Session:
         self._log_session_info()
 
     @property
-    def driver(self):
+    def driver(self) -> webdriver.Chrome | webdriver.Firefox:
+        if not hasattr(self, "_driver") or self._driver is None:
+            raise RuntimeError("Browser session is closed or was not initialized.")
         return self._driver
 
     def _get_driver(self) -> webdriver.Chrome | webdriver.Firefox:
@@ -149,12 +151,19 @@ class Session:
     def close_driver(self):
         self.driver.close()
 
-    def close(self):
+    def close(self) -> None:
         """Close Session"""
-        self.__del__()
+        driver = getattr(self, "_driver", None)
+        if driver is None:
+            return
 
-    def __del__(self):
-        self.driver.quit()
+        try:
+            driver.quit()
+        finally:
+            self._driver = None
+
+    def __del__(self) -> None:
+        self.close()
 
     def _log_session_info(self) -> None:
         """Log information about the browser session."""

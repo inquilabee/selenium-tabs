@@ -1,0 +1,20 @@
+---
+description: Selenium Tabs project map and package boundaries
+alwaysApply: true
+---
+
+# Project Map
+
+`seleniumtabs` is a published Python package that wraps Selenium with a tab-centric API. Preserve the import package name `seleniumtabs` and the public entry points exported from `seleniumtabs/__init__.py`.
+
+Core modules:
+- `browser.py`: user-facing `Browser` context manager and tab lifecycle orchestration.
+- `session.py`: Selenium WebDriver creation, browser options, and session cleanup.
+- `tabs.py`: `Tab` and `TabManager`; page actions, element lookup, PyQuery/jQuery access, waits, scrolling, task scheduling.
+- `schedule_tasks.py`: process-wide scheduler used by tabs and browsers.
+- `css_selectors.py`, `utils/`, `js_scripts/`: focused helpers.
+
+Design boundaries:
+- Keep direct WebDriver side effects in `Session`, `Browser`, and `Tab`; keep helpers pure where possible.
+- Preserve public method names unless a release plan explicitly calls for a breaking change.
+- Default tests must use local fixtures. Live external websites belong under `@pytest.mark.integration`.
